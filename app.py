@@ -156,6 +156,13 @@ class WebSessionState:
     def _arc_slug(arc_name):
         return arc_name.lower().replace("the ", "").replace(" ", "_")
 
+    def _all_interests(self):
+        """Gather the union of all children's interests."""
+        interests = []
+        for c in self.children.values():
+            interests.extend(getattr(c, 'interests', []))
+        return list(set(interests))
+
     def get_current_screen(self):
         """Return the current screen data for the frontend."""
         arc_num, position = get_session_position(self.session_number)
@@ -254,7 +261,7 @@ class WebSessionState:
             base["screen"] = "story"
             base["title"] = "STORY"
             beat_num = 0 if self.phase == "act2_story_beat1" else 1
-            base["text"] = get_story_beat(self.session_number, beat_num)
+            base["text"] = get_story_beat(self.session_number, beat_num, self._all_interests())
             base["style"] = "story"
             base["image"] = f"/static/images/arcs/{arc_slug}.png"
 
@@ -265,7 +272,7 @@ class WebSessionState:
             base["screen"] = "break"
             base["break_type"] = "movement"
             base["title"] = "POWER-UP TIME!"
-            base["text"] = get_movement_break(self.session_number)
+            base["text"] = get_movement_break(self.session_number, self._all_interests())
 
         elif self.phase == "act3_boss_intro":
             base["screen"] = "boss_intro"
@@ -279,7 +286,7 @@ class WebSessionState:
         elif self.phase == "silly_break":
             base["screen"] = "break"
             base["break_type"] = "silly"
-            activity = get_silly_break(self.session_number)
+            activity = get_silly_break(self.session_number, self._all_interests())
             base["title"] = f"SILLY TIME: {activity['name']}"
             base["text"] = activity["read_aloud"]
 
@@ -335,7 +342,7 @@ class WebSessionState:
         elif self.phase == "act5_mission":
             base["screen"] = "story"
             if self.session_number % 2 == 0:
-                mission = get_secret_mission(self.session_number)
+                mission = get_secret_mission(self.session_number, self._all_interests())
                 base["title"] = "SECRET MISSION"
                 base["text"] = (
                     f"Captain Starlight has a SECRET MISSION for you this week!\n\n"

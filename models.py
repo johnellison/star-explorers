@@ -88,6 +88,7 @@ class ChildProfile:
     total_correct: int = 0
     power_level: int = 1
     topics: dict = field(default_factory=dict)  # topic_id -> TopicProgress
+    interests: list = field(default_factory=list)
     favourite_formats: list = field(default_factory=list)
     frustration_triggers: list = field(default_factory=list)
 
@@ -120,6 +121,7 @@ class ChildProfile:
             "total_correct": self.total_correct,
             "power_level": self.power_level,
             "topics": {k: v.to_dict() for k, v in self.topics.items()},
+            "interests": self.interests,
             "favourite_formats": self.favourite_formats,
             "frustration_triggers": self.frustration_triggers,
         }
@@ -138,6 +140,7 @@ class ChildProfile:
             total_correct=d.get("total_correct", 0),
             power_level=d.get("power_level", 1),
             topics=topics,
+            interests=d.get("interests", []),
             favourite_formats=d.get("favourite_formats", []),
             frustration_triggers=d.get("frustration_triggers", []),
         )

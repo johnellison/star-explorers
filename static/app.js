@@ -45,6 +45,149 @@ function playWrongSound() {
     });
 }
 
+function playLaunchSound() {
+    const now = audioCtx.currentTime;
+    // Rising sine sweep + noise whoosh
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(200, now);
+    osc.frequency.exponentialRampToValueAtTime(800, now + 1.2);
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 1.5);
+}
+
+function playBossIntroSound() {
+    const now = audioCtx.currentTime;
+    // Low rumble + dramatic hit
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.value = 60;
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.8);
+    // Hit
+    const hit = audioCtx.createOscillator();
+    const hitGain = audioCtx.createGain();
+    hit.type = 'sine';
+    hit.frequency.value = 120;
+    hitGain.gain.setValueAtTime(0.2, now + 0.6);
+    hitGain.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+    hit.connect(hitGain);
+    hitGain.connect(audioCtx.destination);
+    hit.start(now + 0.6);
+    hit.stop(now + 1.0);
+}
+
+function playVictoryFanfare() {
+    const now = audioCtx.currentTime;
+    // Ascending C-E-G-C5 with triangle waves
+    [261.63, 329.63, 392.00, 523.25].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.15, now + i * 0.2);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.2 + 0.5);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + i * 0.2);
+        osc.stop(now + i * 0.2 + 0.5);
+    });
+}
+
+function playStreakSound() {
+    const now = audioCtx.currentTime;
+    // Fast ascending arpeggio
+    [261.63, 329.63, 392.00, 523.25, 659.25].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.12, now + i * 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.25);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + i * 0.06);
+        osc.stop(now + i * 0.06 + 0.25);
+    });
+}
+
+function playLightningSound() {
+    const now = audioCtx.currentTime;
+    // Sharp electrical zap
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(200, now + 0.08);
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.12);
+}
+
+function playTransitionSound() {
+    const now = audioCtx.currentTime;
+    // Soft filtered whoosh
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, now);
+    osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
+    gain.gain.setValueAtTime(0.04, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.2);
+}
+
+function playCelebrationSound() {
+    const now = audioCtx.currentTime;
+    // Extended fanfare with vibrato sustain
+    [261.63, 329.63, 392.00, 523.25].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        const dur = i === 3 ? 1.2 : 0.3;
+        gain.gain.setValueAtTime(0.15, now + i * 0.18);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.18 + dur);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + i * 0.18);
+        osc.stop(now + i * 0.18 + dur);
+    });
+}
+
+function playAchievementSound() {
+    const now = audioCtx.currentTime;
+    // Magical sustained chime with harmonic
+    [523.25, 1046.50].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(i === 0 ? 0.12 : 0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 1.5);
+    });
+}
+
 // --- Starfield ---
 
 function createStarfield() {
@@ -201,6 +344,151 @@ function showCascade() {
     }
 }
 
+// --- Celebration Effects ---
+
+function showScreenFlash(color) {
+    const flash = document.createElement('div');
+    flash.className = 'screen-flash';
+    flash.style.background = color;
+    document.body.appendChild(flash);
+    flash.animate([
+        { opacity: 0.3 },
+        { opacity: 0 },
+    ], { duration: 250, easing: 'ease-out' });
+    setTimeout(() => flash.remove(), 250);
+}
+
+function showCometTrail() {
+    const container = $('#particles');
+    const comet = document.createElement('div');
+    comet.className = 'comet-trail';
+    comet.style.left = '-20px';
+    comet.style.top = (10 + Math.random() * 40) + '%';
+    container.appendChild(comet);
+
+    comet.animate([
+        { transform: 'translateX(0)', opacity: 1 },
+        { transform: `translateX(${window.innerWidth + 100}px)`, opacity: 0 },
+    ], { duration: 1200, easing: 'ease-in' });
+
+    // Trail particles
+    for (let i = 0; i < 6; i++) {
+        setTimeout(() => {
+            const trail = document.createElement('div');
+            trail.className = 'comet-trail';
+            trail.style.left = (i * 15) + '%';
+            trail.style.top = comet.style.top;
+            trail.style.width = '4px';
+            trail.style.height = '4px';
+            trail.style.opacity = '0.5';
+            container.appendChild(trail);
+            trail.animate([
+                { opacity: 0.5, transform: 'scale(1)' },
+                { opacity: 0, transform: 'scale(0.2)' },
+            ], { duration: 400, easing: 'ease-out' });
+            setTimeout(() => trail.remove(), 400);
+        }, i * 100);
+    }
+    setTimeout(() => comet.remove(), 1300);
+}
+
+function showRocketLaunch() {
+    const container = $('#particles');
+    const rocket = document.createElement('div');
+    rocket.className = 'star-particle';
+    rocket.textContent = '🚀';
+    rocket.style.left = '50%';
+    rocket.style.top = '90%';
+    rocket.style.fontSize = '48px';
+    rocket.style.animation = 'none';
+    container.appendChild(rocket);
+
+    rocket.animate([
+        { transform: 'translateY(0) scale(1) rotate(0deg)', opacity: 1 },
+        { transform: 'translateY(-100vh) scale(0.3) rotate(-15deg)', opacity: 0 },
+    ], { duration: 1500, easing: 'ease-in' });
+
+    // Exhaust particles
+    for (let i = 0; i < 15; i++) {
+        setTimeout(() => {
+            const exhaust = document.createElement('div');
+            exhaust.className = 'star-particle';
+            exhaust.textContent = ['🔥', '💨', '✨'][i % 3];
+            exhaust.style.left = (48 + Math.random() * 4) + '%';
+            exhaust.style.top = (85 - i * 4) + '%';
+            exhaust.style.fontSize = '20px';
+            exhaust.style.animation = 'none';
+            container.appendChild(exhaust);
+            exhaust.animate([
+                { opacity: 1, transform: 'scale(1)' },
+                { opacity: 0, transform: `scale(0.3) translateY(${50 + Math.random() * 50}px)` },
+            ], { duration: 600, easing: 'ease-out' });
+            setTimeout(() => exhaust.remove(), 600);
+        }, i * 80);
+    }
+    setTimeout(() => rocket.remove(), 1500);
+}
+
+function showFireworks(count) {
+    for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+            const x = 100 + Math.random() * (window.innerWidth - 200);
+            const y = 50 + Math.random() * (window.innerHeight * 0.5);
+            spawnStarBurst(x, y);
+        }, i * 350);
+    }
+}
+
+function showScreenShake() {
+    const main = $('main');
+    main.classList.add('screen-shake');
+    setTimeout(() => main.classList.remove('screen-shake'), 500);
+}
+
+function showExpandingRing() {
+    const ring = document.createElement('div');
+    ring.style.cssText = `
+        position: fixed; top: 50%; left: 50%;
+        width: 80px; height: 80px;
+        border: 3px solid var(--gold);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 200;
+        transform: translate(-50%, -50%) scale(0);
+    `;
+    document.body.appendChild(ring);
+    ring.animate([
+        { transform: 'translate(-50%, -50%) scale(0)', opacity: 0.8, borderWidth: '3px' },
+        { transform: 'translate(-50%, -50%) scale(4)', opacity: 0, borderWidth: '1px' },
+    ], { duration: 800, easing: 'ease-out' });
+    setTimeout(() => ring.remove(), 800);
+}
+
+function animateScoreCounter(element, from, to, duration = 1500) {
+    const start = performance.now();
+    function update(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+        element.textContent = Math.round(from + (to - from) * eased);
+        if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+}
+
+// --- Screen Transitions ---
+
+let lastScreen = null;
+
+function transitionTo(renderFn, transitionClass = 'fade-in') {
+    const main = content();
+    main.style.animation = 'none';
+    main.offsetHeight; // force reflow
+    main.style.animation = `${transitionClass} 0.35s ease`;
+    playTransitionSound();
+    renderFn();
+}
+
 // --- Scene Image Helper ---
 
 function imageHtml(src, alt) {
@@ -234,17 +522,33 @@ async function doAction(action) {
 
     if (result.correct === true) {
         playCorrectSound();
+        showScreenFlash('rgba(74, 222, 128, 0.25)');
         spawnStarBurst(window.innerWidth / 2, window.innerHeight / 3);
         if (result.points) showPointsPopup(result.points);
-        if (result.achievement) showAchievement(result.achievement);
+
+        // Streak celebration
+        if (result.streak >= 3) {
+            setTimeout(() => {
+                playStreakSound();
+                showCometTrail();
+            }, 300);
+        }
+
+        if (result.achievement) {
+            playAchievementSound();
+            showExpandingRing();
+            showAchievement(result.achievement);
+        }
     } else if (result.correct === false) {
         playWrongSound();
+        showScreenFlash('rgba(248, 113, 113, 0.2)');
     }
 
     await fetchState();
 }
 
 async function startSession() {
+    playLaunchSound();
     await apiPost('/api/session/start');
     await doAction('continue');
 }
@@ -311,11 +615,23 @@ function renderScreen() {
     };
 
     const renderer = renderers[screen];
+    const transitionMap = {
+        'story': 'slide-in-right',
+        'boss_intro': 'zoom-in',
+        'break': 'bounce-in',
+    };
+    const transition = transitionMap[screen] || 'fade-in';
+
     if (renderer) {
-        renderer();
+        if (screen !== lastScreen) {
+            transitionTo(() => renderer(), transition);
+        } else {
+            renderer();
+        }
     } else {
-        renderStory();
+        transitionTo(() => renderStory(), 'slide-in-right');
     }
+    lastScreen = screen;
 }
 
 function renderNoSession() {
@@ -489,6 +805,7 @@ function renderBreak() {
 }
 
 function renderBossIntro() {
+    playBossIntroSound();
     content().innerHTML = `
         <div class="card boss-border">
             <div class="story-panel">
@@ -508,7 +825,10 @@ function renderBossIntro() {
 }
 
 function renderBossVictory() {
-    showCascade();
+    playVictoryFanfare();
+    showScreenShake();
+    showRocketLaunch();
+    setTimeout(() => showCascade(), 500);
     content().innerHTML = `
         <div class="card green-border">
             <div class="story-panel">
@@ -529,7 +849,11 @@ function renderBossVictory() {
 
 function renderLightningResult() {
     const record = state.new_record;
-    if (record) showCascade();
+    if (record) {
+        playLightningSound();
+        showFireworks(5);
+        showScreenFlash('rgba(255, 215, 0, 0.3)');
+    }
 
     content().innerHTML = `
         <div class="card ${record ? 'gold-border' : ''}">
@@ -553,6 +877,7 @@ function renderLightningResult() {
 
 function renderScoreReport() {
     const stats = state.stats || {};
+    playCelebrationSound();
     showCascade();
 
     let childStats = '';
@@ -569,7 +894,7 @@ function renderScoreReport() {
     content().innerHTML = `
         <div class="card gold-border">
             <div class="phase-label">SESSION COMPLETE</div>
-            <div class="score-number">${state.team_score}</div>
+            <div class="score-number" id="score-counter">0</div>
             <div class="score-label">Adventure Points Earned</div>
             <div class="report-lines">${state.report}</div>
             <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -577,6 +902,10 @@ function renderScoreReport() {
             </div>
         </div>
     `;
+
+    // Animate score counting up
+    const scoreEl = document.getElementById('score-counter');
+    if (scoreEl) animateScoreCounter(scoreEl, 0, state.team_score);
 
     controlsBar().innerHTML = `
         <button class="ctrl-btn continue" onclick="doAction('continue')">
@@ -630,6 +959,8 @@ function renderCliffhanger() {
 }
 
 function renderComplete() {
+    playCelebrationSound();
+    showFireworks(8);
     showCascade();
 
     content().innerHTML = `

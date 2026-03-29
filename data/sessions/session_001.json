@@ -1,12 +1,12 @@
 {
   "session_number": 1,
-  "date": "2026-03-15T18:05:42.867690",
-  "duration_minutes": 8,
+  "date": "2026-03-29T14:06:22.279034",
+  "duration_minutes": 0,
   "children": {
     "Jesse": {
-      "asked": 1,
-      "correct": 1,
-      "new": 2
+      "asked": 0,
+      "correct": 0,
+      "new": 0
     },
     "Reuben": {
       "asked": 0,
@@ -14,7 +14,7 @@
       "new": 0
     }
   },
-  "team_score": 5,
+  "team_score": 0,
   "achievements_earned": [],
   "notes": [],
   "callbacks_created": []

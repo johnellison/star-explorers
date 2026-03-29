@@ -172,12 +172,58 @@ def get_cliffhanger(session_number: int) -> str:
     return arc["cliffhangers"][idx]
 
 
-def get_story_beat(session_number: int, beat_number: int) -> str:
+THEMED_BEATS = {
+    "dinosaurs": [
+        "A SPACE DINOSAUR appeared out of the cosmic mist! ROAR! It's cheering you on!",
+        "The T-Rex gave you a tiny high-five with its tiny arms! 'You're DINO-MITE!'",
+        "A baby Triceratops trots alongside you, impressed by your brain power!",
+        "The ground shook with a mighty STOMP — a friendly Brontosaurus is celebrating with you!",
+    ],
+    "karate": [
+        "HI-YA! Your brain is doing karate on these questions! Powerful stuff!",
+        "That answer was like a perfect karate kick — POW! Right on target!",
+        "A karate master appears in the mist and bows to you. 'Your mind is strong!'",
+        "CHOP CHOP CHOP! You're chopping through these challenges like a karate champion!",
+    ],
+    "violin": [
+        "A magical violin plays a victory melody as you get closer to the answer!",
+        "The Crystal Dragon pulls out a tiny violin and plays a celebratory tune!",
+        "The enchanted trees sway to music only the bravest explorers can hear!",
+        "A symphony of magical instruments fills the air — your answers are making music!",
+    ],
+    "woodworking": [
+        "You found a workshop hidden behind the waterfall — tools and wood everywhere!",
+        "Each correct answer adds another plank to the bridge you're building to victory!",
+        "Like a master carpenter, you're building something amazing — piece by piece!",
+        "The Wise Owl carved a star into a wooden plaque: 'For the cleverest explorer!'",
+    ],
+    "science": [
+        "SCIENCE FACT: Did you know neutron stars spin 600 times per second? Your brain spins just as fast!",
+        "SCIENCE FACT: An octopus has three hearts! Your one heart is brave enough for any challenge!",
+        "SCIENCE FACT: Lightning is 5 times hotter than the Sun's surface! And YOU are on fire right now!",
+        "Like a real scientist, you're testing, thinking, and discovering! Brilliant work!",
+    ],
+    "space": [
+        "SPACE FACT: Jupiter is so big that 1,300 Earths could fit inside it! Your brain is THAT big!",
+        "SPACE FACT: A day on Venus is longer than a year on Venus! Space is weird and wonderful!",
+        "SPACE FACT: There are more stars in the universe than grains of sand on Earth! You're one of the brightest!",
+        "The stars are aligning in your favour — cosmic energy is powering your answers!",
+    ],
+    "parkrun": [
+        "You're sprinting through these challenges like the last 100 metres of parkrun! GO GO GO!",
+        "This adventure is like parkrun — one step at a time, and you're getting there!",
+        "The finish line is in sight! Keep running, keep answering, keep going!",
+        "Your brain is doing a 5K right now — and it's setting a personal best!",
+    ],
+}
+
+
+def get_story_beat(session_number: int, beat_number: int, interests: list = None) -> str:
     """Get a mini story beat for between questions."""
     arc = get_arc(get_session_position(session_number)[0])
     characters = arc["characters"]
 
-    beats = [
+    generic_beats = [
         f"Great work! {random.choice(characters)} nods approvingly. 'You're getting closer!'",
         "You found a piece of the puzzle! One step closer to solving the mystery!",
         f"'Impressive!' says {random.choice(characters)}. 'I didn't think anyone could do that!'",
@@ -187,7 +233,16 @@ def get_story_beat(session_number: int, beat_number: int) -> str:
         "A treasure chest appears in the corner of your eye! But first, more challenges await...",
         "The ground beneath your feet glows with each correct answer!",
     ]
-    return beats[beat_number % len(beats)]
+
+    # ~40% chance of themed beat when interests available
+    if interests and random.random() < 0.4:
+        themed = []
+        for interest in interests:
+            themed.extend(THEMED_BEATS.get(interest, []))
+        if themed:
+            return random.choice(themed)
+
+    return generic_beats[beat_number % len(generic_beats)]
 
 
 def get_boss_intro(session_number: int) -> str:
@@ -281,21 +336,128 @@ SECRET_MISSIONS = [
 ]
 
 
-def get_movement_break(session_number: int) -> str:
-    """Get a movement break prompt."""
-    return MOVEMENT_BREAKS[session_number % len(MOVEMENT_BREAKS)]
+THEMED_MOVEMENT_BREAKS = {
+    "karate": [
+        "KARATE TIME! Show me your best karate KICK! HI-YA! Now a karate CHOP! HI-YA! Now a BLOCK! You're a karate master!",
+        "KARATE COMBO! Kick, chop, kick, chop, SPIN KICK! Count each move: 1, 2, 3, 4, 5!",
+    ],
+    "dinosaurs": [
+        "DINOSAUR STOMP! Stomp around the room like a T-Rex! STOMP STOMP STOMP! Make the ground shake!",
+        "PTERODACTYL FLIGHT! Spread your arms and fly like a pterodactyl around the room! SQUAWK!",
+    ],
+    "violin": [
+        "AIR VIOLIN TIME! Pick up your invisible violin and play the FASTEST song you can! Fingers flying!",
+        "CONDUCTOR! Wave your arms like a conductor leading an orchestra! Big sweeping movements!",
+    ],
+    "woodworking": [
+        "HAMMER TIME! Pretend to hammer some nails! BANG BANG BANG! Count 10 hammer hits!",
+        "SAW IT UP! Pretend you're sawing a big piece of wood! Back and forth! How many cuts can you do in 10 seconds?",
+    ],
+    "parkrun": [
+        "PARKRUN SPRINT! Run on the spot as fast as you can for 10 seconds! It's the final stretch! GO GO GO!",
+        "PARKRUN WARM-UP! Jog on the spot... now high knees... now SPRINT to the finish! You crossed the line!",
+    ],
+}
+
+THEMED_SILLY_BREAKS = {
+    "dinosaurs": [
+        {
+            "name": "Dinosaur Impressions",
+            "read_aloud": "DINOSAUR TIME! Do your best T-REX roar! ROAR! Now do a tiny baby dinosaur squeak! Now a LONG-NECK dinosaur moo!",
+        },
+    ],
+    "karate": [
+        {
+            "name": "Karate Sounds",
+            "read_aloud": "Make the BEST karate sound you can! HI-YA! Now in a whisper... hi-ya... Now the LOUDEST ever! HI-YAAAA!",
+        },
+    ],
+    "violin": [
+        {
+            "name": "Orchestra Sounds",
+            "read_aloud": "Be an orchestra! Make a VIOLIN sound... now a DRUM... now a TRUMPET! Now play them ALL at once!",
+        },
+    ],
+    "science": [
+        {
+            "name": "Science Experiment",
+            "read_aloud": "You're a MAD SCIENTIST! Mix your invisible potions! Pour this one in... BUBBLE BUBBLE... add this one... FIZZZZ! What colour did it turn?",
+        },
+    ],
+    "space": [
+        {
+            "name": "Moon Walk",
+            "read_aloud": "You're on the MOON! Walk in slow motion like there's no gravity! Booooiiing booooiiing! Everything is floaty!",
+        },
+    ],
+}
 
 
-def get_silly_break(session_number: int) -> dict:
-    """Get a silly break activity."""
-    return SILLY_BREAKS[session_number % len(SILLY_BREAKS)]
+def get_movement_break(session_number: int, interests: list = None) -> str:
+    """Get a movement break prompt, mixing in themed breaks."""
+    pool = list(MOVEMENT_BREAKS)
+    if interests:
+        for interest in interests:
+            pool.extend(THEMED_MOVEMENT_BREAKS.get(interest, []))
+    return pool[session_number % len(pool)] if not interests else random.choice(pool)
 
 
-def get_secret_mission(session_number: int) -> str:
+def get_silly_break(session_number: int, interests: list = None) -> dict:
+    """Get a silly break activity, mixing in themed breaks."""
+    pool = list(SILLY_BREAKS)
+    if interests:
+        for interest in interests:
+            pool.extend(THEMED_SILLY_BREAKS.get(interest, []))
+    return pool[session_number % len(pool)] if not interests else random.choice(pool)
+
+
+THEMED_SECRET_MISSIONS = {
+    "woodworking": [
+        "BUILD CHALLENGE! Build something small out of wood, lego, or cardboard before our next session. Show me what you made!",
+        "MEASURE MISSION! Find 3 things in your house and measure them with a ruler. Which was longest?",
+    ],
+    "dinosaurs": [
+        "DINO DETECTIVE! Find 3 amazing dinosaur facts this week. Tell me your favourite next time!",
+        "DRAW A DINOSAUR! Draw the coolest space dinosaur you can imagine. Bring it to show me!",
+    ],
+    "violin": [
+        "MINI CONCERT! Practice a violin song to play for us next time. We want a mini concert!",
+        "MUSIC HUNT! Listen for 3 different instruments in songs this week. What did you hear?",
+    ],
+    "karate": [
+        "KARATE PRACTICE! Do 10 karate moves every day this week. Count how many you do altogether!",
+        "KARATE TEACHER! Teach someone at home a karate move. Who did you teach?",
+    ],
+    "science": [
+        "SCIENCE EXPERIMENT! Try mixing water with something (oil, food colouring, salt). What happens?",
+        "NATURE SCIENTIST! Find 3 interesting bugs or plants outside. What did you discover?",
+    ],
+    "space": [
+        "STAR GAZER! Look at the night sky this week. Can you spot any constellations or planets?",
+        "SPACE RESEARCHER! Find out one amazing fact about a planet. Which planet did you pick?",
+    ],
+    "parkrun": [
+        "PARKRUN REPORTER! After parkrun this weekend, remember your time and how you felt. Tell me next session!",
+        "RUNNING COUNTER! Count your steps on a short walk this week. How many steps was it?",
+    ],
+}
+
+
+def get_secret_mission(session_number: int, interests: list = None) -> str:
     """Get a secret mission for between sessions."""
-    template = SECRET_MISSIONS[session_number % len(SECRET_MISSIONS)]
+    # Mix generic and themed missions
+    pool = list(SECRET_MISSIONS)
+    if interests:
+        for interest in interests:
+            pool.extend(THEMED_SECRET_MISSIONS.get(interest, []))
+
+    if interests:
+        mission = random.choice(pool)
+    else:
+        mission = pool[session_number % len(pool)]
+
     shapes = ["circle", "triangle", "rectangle", "square"]
-    return template.format(shape=shapes[session_number % len(shapes)])
+    return mission.format(shape=shapes[session_number % len(shapes)])
 
 
 def generate_score_report(team_state, children, session_stats) -> str:

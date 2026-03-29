@@ -33,8 +33,13 @@ def get_questions_for_child(questions: list[Question], age: int,
                             subject: str = None,
                             topic: str = None,
                             difficulty_tier: int = None,
-                            format_type: str = None) -> list[Question]:
-    """Filter questions appropriate for a child."""
+                            format_type: str = None,
+                            interests: list = None) -> list[Question]:
+    """Filter questions appropriate for a child.
+
+    When interests are provided, themed questions matching those interests
+    are prioritized (returned first) but generic questions are still included.
+    """
     filtered = []
     for q in questions:
         if age < q.age_range[0] or age > q.age_range[1]:
@@ -48,6 +53,13 @@ def get_questions_for_child(questions: list[Question], age: int,
         if format_type and q.format != format_type:
             continue
         filtered.append(q)
+
+    if interests:
+        interest_set = set(interests)
+        tagged = [q for q in filtered if interest_set & set(q.tags)]
+        untagged = [q for q in filtered if not (interest_set & set(q.tags))]
+        return tagged + untagged
+
     return filtered
 
 
