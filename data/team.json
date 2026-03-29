@@ -1,0 +1,20 @@
+{
+  "team_name": "Star Explorers",
+  "total_adventure_points": 5,
+  "sessions_completed": 1,
+  "achievements": [],
+  "current_arc": 1,
+  "current_chapter": 1,
+  "arc_name": "The Enchanted Forest",
+  "characters_met": [
+    "Captain Starlight",
+    "The Wise Owl",
+    "The Puzzle Goblin"
+  ],
+  "items_collected": [],
+  "cliffhanger": "",
+  "callbacks": [],
+  "secret_mission": {},
+  "lightning_round_record": 0,
+  "rhyme_chain_record": 0
+}
