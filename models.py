@@ -6,7 +6,16 @@ from typing import Optional
 import json
 import os
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+_SOURCE_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+
+# On Vercel, filesystem is read-only — copy data to /tmp on cold start
+if os.environ.get("VERCEL"):
+    import shutil
+    DATA_DIR = "/tmp/star-explorers-data"
+    if not os.path.exists(DATA_DIR):
+        shutil.copytree(_SOURCE_DATA_DIR, DATA_DIR)
+else:
+    DATA_DIR = _SOURCE_DATA_DIR
 
 
 @dataclass
