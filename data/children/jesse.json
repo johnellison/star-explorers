@@ -3,44 +3,10 @@
   "age": 4,
   "character_name": "Jesse the Sound Seeker",
   "character_title": "Sound Seeker",
-  "sessions_completed": 1,
-  "total_correct": 1,
+  "sessions_completed": 0,
+  "total_correct": 0,
   "power_level": 1,
-  "topics": {
-    "rhyming": {
-      "topic_id": "rhyming",
-      "subject": "Spelling",
-      "difficulty_tier": 1,
-      "items": {
-        "age4_rhyming_01": {
-          "item_id": "age4_rhyming_01",
-          "box": 1,
-          "ease": 2.6,
-          "interval_sessions": 1,
-          "next_review_session": 2,
-          "streak": 1,
-          "times_seen": 1,
-          "times_correct": 1,
-          "last_result": "correct",
-          "introduced_session": 1,
-          "mastered": false
-        },
-        "age4_rhyming_02": {
-          "item_id": "age4_rhyming_02",
-          "box": 1,
-          "ease": 2.5,
-          "interval_sessions": 1,
-          "next_review_session": 2,
-          "streak": 0,
-          "times_seen": 0,
-          "times_correct": 0,
-          "last_result": "",
-          "introduced_session": 1,
-          "mastered": false
-        }
-      }
-    }
-  },
+  "topics": {},
   "favourite_formats": [],
   "frustration_triggers": []
 }

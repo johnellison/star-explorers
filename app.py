@@ -152,10 +152,15 @@ class WebSessionState:
                 queue.append((child.name, random.choice(hard), None))
         self.treasure_queue = queue
 
+    @staticmethod
+    def _arc_slug(arc_name):
+        return arc_name.lower().replace("the ", "").replace(" ", "_")
+
     def get_current_screen(self):
         """Return the current screen data for the frontend."""
         arc_num, position = get_session_position(self.session_number)
         arc = get_arc(arc_num)
+        arc_slug = self._arc_slug(arc["name"])
 
         base = {
             "phase": self.phase,
@@ -188,6 +193,7 @@ class WebSessionState:
         if self.phase == "pre_session":
             base["screen"] = "pre_session"
             base["date"] = datetime.now().strftime("%A, %d %B %Y")
+            base["image"] = f"/static/images/arcs/{arc_slug}.png"
             base["topics"] = {}
             for name, child in self.children.items():
                 topics = {}
@@ -239,6 +245,7 @@ class WebSessionState:
             base["title"] = "THE ADVENTURE BEGINS"
             base["text"] = get_story_hook(self.session_number)
             base["style"] = "adventure"
+            base["image"] = f"/static/images/hooks/arc{arc_num}_hook{position}.png"
 
         elif self.phase == "act2_round1":
             base = self._question_screen(base, self.round1_queue, "FIRST QUEST")
@@ -249,6 +256,7 @@ class WebSessionState:
             beat_num = 0 if self.phase == "act2_story_beat1" else 1
             base["text"] = get_story_beat(self.session_number, beat_num)
             base["style"] = "story"
+            base["image"] = f"/static/images/arcs/{arc_slug}.png"
 
         elif self.phase == "act2_round2":
             base = self._question_screen(base, self.round2_queue, "SECOND ROUND")
@@ -263,6 +271,7 @@ class WebSessionState:
             base["screen"] = "boss_intro"
             base["title"] = "BOSS CHALLENGE!"
             base["text"] = get_boss_intro(self.session_number)
+            base["image"] = "/static/images/boss/puzzle_goblin_challenge.png"
 
         elif self.phase == "act3_boss":
             base = self._boss_screen(base)
@@ -321,6 +330,7 @@ class WebSessionState:
         elif self.phase == "act5_cliffhanger":
             base["screen"] = "cliffhanger"
             base["text"] = get_cliffhanger(self.session_number)
+            base["image"] = f"/static/images/cliffhangers/arc{arc_num}_cliff{position}.png"
 
         elif self.phase == "act5_mission":
             base["screen"] = "story"
@@ -351,6 +361,7 @@ class WebSessionState:
                 f"Talk to you next time!"
             )
             base["final_score"] = self.team_score
+            base["image"] = "/static/images/ui/mission_complete.png"
 
         return base
 
@@ -401,6 +412,7 @@ class WebSessionState:
                 base["screen"] = "boss_victory"
                 base["title"] = "BOSS DEFEATED!"
                 base["text"] = challenge["celebration"]
+                base["image"] = "/static/images/boss/puzzle_goblin_defeated.png"
             else:
                 base["screen"] = "story"
                 base["title"] = "KEEP GOING!"

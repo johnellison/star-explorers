@@ -1,16 +1,12 @@
 {
   "team_name": "Star Explorers",
-  "total_adventure_points": 5,
-  "sessions_completed": 1,
+  "total_adventure_points": 0,
+  "sessions_completed": 0,
   "achievements": [],
   "current_arc": 1,
-  "current_chapter": 1,
-  "arc_name": "The Enchanted Forest",
-  "characters_met": [
-    "Captain Starlight",
-    "The Wise Owl",
-    "The Puzzle Goblin"
-  ],
+  "current_chapter": 0,
+  "arc_name": "",
+  "characters_met": [],
   "items_collected": [],
   "cliffhanger": "",
   "callbacks": [],

@@ -50,20 +50,97 @@ function playWrongSound() {
 function createStarfield() {
     const sf = $('#starfield');
     sf.innerHTML = '';
-    const count = 80;
+
+    // Nebula patches — large blurred color blobs
+    const nebulaColors = [
+        'radial-gradient(circle, rgba(199,125,255,0.4), transparent 70%)',
+        'radial-gradient(circle, rgba(123,47,247,0.3), transparent 70%)',
+        'radial-gradient(circle, rgba(160,196,255,0.3), transparent 70%)',
+    ];
+    for (let i = 0; i < 3; i++) {
+        const patch = document.createElement('div');
+        patch.className = 'nebula-patch';
+        const size = 300 + Math.random() * 400;
+        patch.style.width = size + 'px';
+        patch.style.height = size + 'px';
+        patch.style.left = (10 + Math.random() * 80) + '%';
+        patch.style.top = (10 + Math.random() * 80) + '%';
+        patch.style.background = nebulaColors[i];
+        sf.appendChild(patch);
+    }
+
+    // Stars — varied colors and sizes
+    const starColors = [
+        { color: '#ffffff', weight: 55 },
+        { color: '#a0c4ff', weight: 18 },   // star-blue
+        { color: '#c77dff', weight: 12 },   // nebula purple
+        { color: '#fff5e0', weight: 8 },    // warm white
+        { color: '#72efdd', weight: 7 },    // cosmic teal
+    ];
+
+    function pickStarColor() {
+        const total = starColors.reduce((s, c) => s + c.weight, 0);
+        let r = Math.random() * total;
+        for (const sc of starColors) {
+            r -= sc.weight;
+            if (r <= 0) return sc.color;
+        }
+        return '#ffffff';
+    }
+
+    const count = 120;
     for (let i = 0; i < count; i++) {
         const star = document.createElement('div');
         star.className = 'star';
-        const size = Math.random() * 3 + 1;
+        const size = Math.random() * 3.5 + 0.8;
+        const color = pickStarColor();
         star.style.width = size + 'px';
         star.style.height = size + 'px';
         star.style.left = Math.random() * 100 + '%';
         star.style.top = Math.random() * 100 + '%';
+        star.style.background = color;
+        if (size > 2.5) {
+            star.style.boxShadow = `0 0 ${size * 2}px ${color}`;
+        }
         star.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
         star.style.setProperty('--max-opacity', Math.random() * 0.6 + 0.4);
         star.style.animationDelay = Math.random() * 5 + 's';
         sf.appendChild(star);
     }
+}
+
+// --- Shooting Stars ---
+
+function spawnShootingStar() {
+    const sf = $('#starfield');
+    const star = document.createElement('div');
+    star.className = 'shooting-star';
+    star.style.left = Math.random() * 60 + '%';
+    star.style.top = Math.random() * 50 + '%';
+
+    const angle = 20 + Math.random() * 30;
+    const distance = 250 + Math.random() * 200;
+    const dx = Math.cos(angle * Math.PI / 180) * distance;
+    const dy = Math.sin(angle * Math.PI / 180) * distance;
+    const duration = 600 + Math.random() * 400;
+
+    sf.appendChild(star);
+    star.animate([
+        { transform: 'translateX(0) translateY(0)', opacity: 1 },
+        { transform: `translateX(${dx}px) translateY(${dy}px)`, opacity: 0 },
+    ], { duration, easing: 'ease-out' });
+    setTimeout(() => star.remove(), duration);
+}
+
+function startShootingStars() {
+    function scheduleNext() {
+        const delay = 12000 + Math.random() * 20000; // 12-32 seconds
+        setTimeout(() => {
+            spawnShootingStar();
+            scheduleNext();
+        }, delay);
+    }
+    scheduleNext();
 }
 
 // --- Particle Effects ---
@@ -122,6 +199,13 @@ function showCascade() {
             setTimeout(() => p.remove(), 2200);
         }, i * 100);
     }
+}
+
+// --- Scene Image Helper ---
+
+function imageHtml(src, alt) {
+    if (!src) return '';
+    return `<img src="${src}" alt="${alt || ''}" class="scene-image" onerror="this.style.display='none'" />`;
 }
 
 // --- API Calls ---
@@ -237,6 +321,7 @@ function renderScreen() {
 function renderNoSession() {
     content().innerHTML = `
         <div class="no-session">
+            ${imageHtml('/static/images/title_hero.png', 'Star Explorers')}
             <div class="title">STAR EXPLORERS</div>
             <div class="subtitle">Mission Control Ready</div>
         </div>
@@ -289,7 +374,8 @@ function renderPreSession() {
         <div class="dashboard-subtitle">Session #${state.session_number} | ${date}</div>
         ${childCards}
         <div class="card" style="text-align: center;">
-            <div style="color: var(--purple); font-size: 16px;">Story: ${state.arc_name}</div>
+            ${imageHtml(state.image, state.arc_name)}
+            <div style="color: var(--purple); font-size: 16px;">${state.arc_name}</div>
             <div style="color: var(--dim); font-size: 14px; margin-top: 4px;">
                 Total Adventure Points: ${team.total_adventure_points || 0} |
                 Achievements: ${(team.achievements || []).length}
@@ -369,6 +455,7 @@ function renderStory() {
     content().innerHTML = `
         <div class="card ${style}">
             <div class="story-panel">
+                ${imageHtml(state.image, title)}
                 <div class="story-title">${title}</div>
                 <div class="story-text">${text}</div>
             </div>
@@ -405,6 +492,7 @@ function renderBossIntro() {
     content().innerHTML = `
         <div class="card boss-border">
             <div class="story-panel">
+                ${imageHtml(state.image, 'Boss Challenge')}
                 <div class="break-emoji">👹</div>
                 <div class="story-title">${state.title}</div>
                 <div class="story-text">${state.text}</div>
@@ -424,6 +512,7 @@ function renderBossVictory() {
     content().innerHTML = `
         <div class="card green-border">
             <div class="story-panel">
+                ${imageHtml(state.image, 'Victory')}
                 <div class="break-emoji">🏆</div>
                 <div class="story-title">${state.title}</div>
                 <div class="story-text">${state.text}</div>
@@ -527,6 +616,7 @@ function renderPowerLevels() {
 function renderCliffhanger() {
     content().innerHTML = `
         <div class="card purple-border">
+            ${imageHtml(state.image, 'To be continued')}
             <div class="cliffhanger-text">${state.text}</div>
             <div class="cliffhanger-label">To be continued...</div>
         </div>
@@ -544,6 +634,7 @@ function renderComplete() {
 
     content().innerHTML = `
         <div class="card gold-border" style="text-align: center;">
+            ${imageHtml(state.image, 'Mission Complete')}
             <div style="font-size: 72px; margin-bottom: 16px;">🚀</div>
             <div class="dashboard-title">${state.title}</div>
             <div class="story-text" style="margin-top: 16px;">${state.text}</div>
@@ -600,4 +691,5 @@ document.addEventListener('keydown', (e) => {
 // --- Init ---
 
 createStarfield();
+startShootingStars();
 fetchState();
