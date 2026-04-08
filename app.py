@@ -13,12 +13,30 @@ from flask import Flask, jsonify, request, send_from_directory
 
 from models import ChildProfile, TeamState, SessionLog, DATA_DIR
 from spaced_rep import process_answer, build_session_queue, introduce_item
-from questions import (load_question_bank, get_questions_for_child,
-                       get_boss_questions, get_lightning_round)
-from story import (generate_recap, get_story_hook, get_cliffhanger,
-                   get_story_beat, get_boss_intro, get_movement_break,
-                   get_silly_break, get_secret_mission, generate_score_report,
-                   get_session_position, get_arc)
+from questions import (
+    load_question_bank,
+    get_questions_for_child,
+    get_boss_questions,
+    get_lightning_round,
+)
+from story import (
+    CAMPAIGN_WORLDS,
+    build_campaign_snapshot,
+    build_story_flags,
+    get_boss_victory,
+    get_break_payload,
+    generate_recap,
+    get_arc,
+    get_character_status,
+    get_cliffhanger,
+    generate_score_report,
+    get_level,
+    get_secret_mission,
+    get_session_position,
+    get_story_beat,
+    get_story_hook,
+    get_boss_intro,
+)
 
 app = Flask(__name__, static_folder="static")
 
@@ -31,14 +49,25 @@ class WebSessionState:
 
     PHASES = [
         "pre_session",
-        "act1_greeting", "act1_recap", "act1_warmup",
+        "act1_greeting",
+        "act1_recap",
+        "act1_warmup",
         "act1_story_hook",
-        "act2_round1", "act2_story_beat1", "act2_round2", "act2_story_beat2",
+        "act2_round1",
+        "act2_story_beat1",
+        "act2_round2",
+        "act2_story_beat2",
         "movement_break",
-        "act3_boss_intro", "act3_boss",
+        "act3_boss_intro",
+        "act3_boss",
         "silly_break",
-        "act4_review", "act4_treasure", "act4_lightning",
-        "act5_score", "act5_power_levels", "act5_cliffhanger", "act5_mission",
+        "act4_review",
+        "act4_treasure",
+        "act4_lightning",
+        "act5_score",
+        "act5_power_levels",
+        "act5_cliffhanger",
+        "act5_mission",
         "complete",
     ]
 
@@ -123,7 +152,9 @@ class WebSessionState:
                 r1.append((child.name, q, sr))
             new_items = sq.get("new", [])
             scheduled = sq.get("scheduled", [])
-            source = new_items if self.new_introduced.get(child.name, 0) < 3 else scheduled
+            source = (
+                new_items if self.new_introduced.get(child.name, 0) < 3 else scheduled
+            )
             for q, sr in source[:3]:
                 r2.append((child.name, q, sr))
         self.round1_queue = r1
@@ -160,14 +191,16 @@ class WebSessionState:
         """Gather the union of all children's interests."""
         interests = []
         for c in self.children.values():
-            interests.extend(getattr(c, 'interests', []))
+            interests.extend(getattr(c, "interests", []))
         return list(set(interests))
 
     def get_current_screen(self):
         """Return the current screen data for the frontend."""
         arc_num, position = get_session_position(self.session_number)
         arc = get_arc(arc_num)
+        level = get_level(self.session_number)
         arc_slug = self._arc_slug(arc["name"])
+        campaign = build_campaign_snapshot(self.team, self.session_number)
 
         base = {
             "phase": self.phase,
@@ -175,6 +208,11 @@ class WebSessionState:
             "team_score": self.team_score,
             "elapsed_minutes": self.elapsed_minutes,
             "arc_name": arc["name"],
+            "world_number": level["world_number"],
+            "level_number": level["level_number"],
+            "level_name": level["level_name"],
+            "active_objective": level["objective"],
+            "campaign": campaign,
             "children": {
                 name: {
                     "age": c.age,
@@ -194,6 +232,10 @@ class WebSessionState:
                 "sessions_completed": self.team.sessions_completed,
                 "achievements": self.team.achievements,
                 "lightning_round_record": self.team.lightning_round_record,
+                "completed_levels": self.team.completed_levels,
+                "collected_relics": self.team.collected_relics,
+                "current_reward": self.team.current_reward,
+                "world_unlocks": self.team.world_unlocks,
             },
         }
 
@@ -226,57 +268,63 @@ class WebSessionState:
                     f"Let's practice our team chant:\n"
                     f"I'll say: 'Adventurers, are you ready?'\n"
                     f"And you both say: 'READY FOR ADVENTURE!'\n\n"
-                    f"Let's try it! Adventurers, are you ready?"
+                    f"Today's first level is {level['level_name']}.\n"
+                    f"Mission: {level['objective']}"
                 )
             else:
-                base["title"] = "STAR EXPLORERS!"
+                base["title"] = f"MISSION BRIEFING · LEVEL {position}"
                 base["text"] = (
-                    "Adventurers, are you ready?\n\n"
-                    "[Wait for: READY FOR ADVENTURE!]\n\n"
-                    "That's what I like to hear! Let's go!"
+                    f"Adventurers, are you ready?\n\n"
+                    f"[Wait for: READY FOR ADVENTURE!]\n\n"
+                    f"Current level: {level['level_name']}\n"
+                    f"Mission: {level['objective']}"
                 )
 
         elif self.phase == "act1_recap":
             base["screen"] = "story"
-            base["title"] = "PREVIOUSLY ON STAR EXPLORERS"
+            base["title"] = "CAMPAIGN RECAP"
             recap = generate_recap(self.team, list(self.children.values()))
             base["text"] = recap if recap else "This is our first adventure!"
             if self.team.secret_mission:
                 base["secret_mission"] = self.team.secret_mission.get("description", "")
 
         elif self.phase == "act1_warmup":
-            base = self._question_screen(base, self.warmup_queue, "WARM-UP ROUND")
+            base = self._question_screen(base, self.warmup_queue, "LEVEL START")
 
         elif self.phase == "act1_story_hook":
             base["screen"] = "story"
-            base["title"] = "THE ADVENTURE BEGINS"
+            base["title"] = f"LEVEL {position}: {level['level_name']}"
             base["text"] = get_story_hook(self.session_number)
             base["style"] = "adventure"
             base["image"] = f"/static/images/hooks/arc{arc_num}_hook{position}.png"
 
         elif self.phase == "act2_round1":
-            base = self._question_screen(base, self.round1_queue, "FIRST QUEST")
+            base = self._question_screen(base, self.round1_queue, "OBJECTIVE PHASE 1")
 
         elif self.phase in ("act2_story_beat1", "act2_story_beat2"):
             base["screen"] = "story"
-            base["title"] = "STORY"
+            base["title"] = "LEVEL UPDATE"
             beat_num = 0 if self.phase == "act2_story_beat1" else 1
-            base["text"] = get_story_beat(self.session_number, beat_num, self._all_interests())
+            base["text"] = get_story_beat(
+                self.session_number, beat_num, self._all_interests()
+            )
             base["style"] = "story"
             base["image"] = f"/static/images/arcs/{arc_slug}.png"
 
         elif self.phase == "act2_round2":
-            base = self._question_screen(base, self.round2_queue, "SECOND ROUND")
+            base = self._question_screen(base, self.round2_queue, "OBJECTIVE PHASE 2")
 
         elif self.phase == "movement_break":
+            movement_break = get_break_payload(self.session_number, "movement")
             base["screen"] = "break"
             base["break_type"] = "movement"
-            base["title"] = "POWER-UP TIME!"
-            base["text"] = get_movement_break(self.session_number, self._all_interests())
+            base["title"] = movement_break["title"]
+            base["text"] = movement_break["text"]
+            base["break_interaction"] = movement_break.get("interaction")
 
         elif self.phase == "act3_boss_intro":
             base["screen"] = "boss_intro"
-            base["title"] = "BOSS CHALLENGE!"
+            base["title"] = f"LEVEL BOSS · {level['level_name']}"
             base["text"] = get_boss_intro(self.session_number)
             base["image"] = "/static/images/boss/puzzle_goblin_challenge.png"
 
@@ -284,11 +332,11 @@ class WebSessionState:
             base = self._boss_screen(base)
 
         elif self.phase == "silly_break":
+            silly_break = get_break_payload(self.session_number, "silly")
             base["screen"] = "break"
             base["break_type"] = "silly"
-            activity = get_silly_break(self.session_number, self._all_interests())
-            base["title"] = f"SILLY TIME: {activity['name']}"
-            base["text"] = activity["read_aloud"]
+            base["title"] = silly_break["name"]
+            base["text"] = silly_break["read_aloud"]
 
         elif self.phase == "act4_review":
             scheduled_queue = []
@@ -296,10 +344,10 @@ class WebSessionState:
                 sq = self.session_queues.get(child.name, {})
                 for q, sr in sq.get("scheduled", [])[:3]:
                     scheduled_queue.append((child.name, q, sr))
-            base = self._question_screen(base, scheduled_queue, "REVIEW ROUND")
+            base = self._question_screen(base, scheduled_queue, "FINAL STRETCH")
 
         elif self.phase == "act4_treasure":
-            base = self._question_screen(base, self.treasure_queue, "TREASURE CHEST!")
+            base = self._question_screen(base, self.treasure_queue, "BONUS ROUTE")
             base["is_treasure"] = True
 
         elif self.phase == "act4_lightning":
@@ -319,9 +367,12 @@ class WebSessionState:
                     "mastered": self.items_mastered[name],
                 }
             base["report"] = generate_score_report(
-                self.team, list(self.children.values()), session_stats
+                self.team, list(self.children.values()), session_stats, self.session_number
             )
             base["stats"] = session_stats
+            base["reward"] = level["reward"]
+            base["world_complete"] = level["world_complete"]
+            base["next_level"] = level["next_level"]
 
         elif self.phase == "act5_power_levels":
             base["screen"] = "power_levels"
@@ -333,40 +384,59 @@ class WebSessionState:
                 }
                 for c in self.sorted_children()
             }
+            base["reward"] = level["reward"]
+            base["world_complete"] = level["world_complete"]
+            base["next_level"] = level["next_level"]
 
         elif self.phase == "act5_cliffhanger":
             base["screen"] = "cliffhanger"
+            base["title"] = (
+                f"WORLD {level['world_number']} CLEAR"
+                if level["world_complete"]
+                else f"NEXT LEVEL UNLOCKED · {level['next_level']['level_name']}"
+            )
             base["text"] = get_cliffhanger(self.session_number)
-            base["image"] = f"/static/images/cliffhangers/arc{arc_num}_cliff{position}.png"
+            base["image"] = (
+                f"/static/images/cliffhangers/arc{arc_num}_cliff{position}.png"
+            )
+            base["world_complete"] = level["world_complete"]
+            base["next_level"] = level["next_level"]
 
         elif self.phase == "act5_mission":
             base["screen"] = "story"
             if self.session_number % 2 == 0:
                 mission = get_secret_mission(self.session_number, self._all_interests())
-                base["title"] = "SECRET MISSION"
+                base["title"] = "SIDE QUEST"
                 base["text"] = (
-                    f"Captain Starlight has a SECRET MISSION for you this week!\n\n"
+                    f"Captain Starlight has a SIDE QUEST for you this week!\n\n"
                     f"{mission}\n\n"
                     f"Next time, you'll get BONUS POINTS for completing it!"
                 )
             else:
                 names = " and ".join(c.name for c in self.sorted_children())
-                base["title"] = "MISSION COMPLETE"
+                base["title"] = "RETURN TO THE MAP"
                 base["text"] = (
-                    f"Star Explorers, mission complete!\n\n"
-                    f"I love you {names}, and I'm so proud of you. "
-                    f"Talk to you next time!"
+                    f"Star Explorers, level clear!\n\n"
+                    f"Captain Starlight marks the next route on the map for {names}. "
+                    f"The adventure continues next session."
                 )
 
         elif self.phase == "complete":
             base["screen"] = "complete"
             names = " and ".join(c.name for c in self.sorted_children())
-            base["title"] = "MISSION COMPLETE"
-            base["text"] = (
-                f"Star Explorers, mission complete!\n\n"
-                f"I love you {names}, and I'm so proud of you. "
-                f"Talk to you next time!"
-            )
+            if self.session_number >= 25:
+                base["title"] = "CAMPAIGN COMPLETE"
+                base["text"] = (
+                    f"Star Explorers, you restored every world.\n\n"
+                    f"Captain Starlight crowns {names} as true Star Explorers. "
+                    f"The map is bright again, and a new adventure can begin whenever you are ready."
+                )
+            else:
+                base["title"] = "LEVEL COMPLETE"
+                base["text"] = (
+                    f"Star Explorers, level complete!\n\n"
+                    f"Captain Starlight sends {names} back to mission control to rest before the next route unlocks."
+                )
             base["final_score"] = self.team_score
             base["image"] = "/static/images/ui/mission_complete.png"
 
@@ -389,6 +459,8 @@ class WebSessionState:
         base["screen"] = "question"
         base["label"] = label
         base["current_child"] = child_name
+        base["multiple_choice_mode"] = self.team.multiple_choice_mode
+        base["objective"] = get_level(self.session_number)["objective"]
         base["question"] = {
             "id": question.id,
             "read_aloud": question.read_aloud,
@@ -404,10 +476,11 @@ class WebSessionState:
         return base
 
     def _boss_screen(self, base):
+        level = get_level(self.session_number)
         if self.boss_index >= len(self.boss_challenges):
             base["screen"] = "story"
             base["title"] = "BOSS DEFEATED!"
-            base["text"] = get_story_beat(self.session_number, 99)
+            base["text"] = get_boss_victory(self.session_number)
             return base
 
         challenge = self.boss_challenges[self.boss_index]
@@ -418,8 +491,9 @@ class WebSessionState:
                 self.add_points(8)
                 base["screen"] = "boss_victory"
                 base["title"] = "BOSS DEFEATED!"
-                base["text"] = challenge["celebration"]
+                base["text"] = challenge["celebration"] or get_boss_victory(self.session_number)
                 base["image"] = "/static/images/boss/puzzle_goblin_defeated.png"
+                base["reward"] = level["reward"]
             else:
                 base["screen"] = "story"
                 base["title"] = "KEEP GOING!"
@@ -443,6 +517,8 @@ class WebSessionState:
         base["is_boss"] = True
         base["current_child"] = child_name
         base["boss_intro_text"] = challenge["intro"]
+        base["objective"] = level["objective"]
+        base["multiple_choice_mode"] = self.team.multiple_choice_mode
         base["question"] = {
             "id": question.id,
             "read_aloud": question.read_aloud,
@@ -483,6 +559,8 @@ class WebSessionState:
         base["lightning_index"] = self.lightning_index + 1
         base["lightning_total"] = len(self.lightning_queue)
         base["lightning_correct"] = self.lightning_correct
+        base["objective"] = get_level(self.session_number)["objective"]
+        base["multiple_choice_mode"] = self.team.multiple_choice_mode
         base["question"] = {
             "id": question.id,
             "read_aloud": question.read_aloud,
@@ -613,7 +691,11 @@ class WebSessionState:
 
         elif self.phase == "act3_boss":
             self.boss_part_index += 1
-            challenge = self.boss_challenges[self.boss_index] if self.boss_index < len(self.boss_challenges) else None
+            challenge = (
+                self.boss_challenges[self.boss_index]
+                if self.boss_index < len(self.boss_challenges)
+                else None
+            )
             if challenge and self.boss_part_index >= len(challenge["parts"]):
                 pass  # Stay on boss phase to show victory/consolation
 
@@ -654,14 +736,25 @@ class WebSessionState:
         """Move to the next phase."""
         phase_order = [
             "pre_session",
-            "act1_greeting", "act1_recap", "act1_warmup",
+            "act1_greeting",
+            "act1_recap",
+            "act1_warmup",
             "act1_story_hook",
-            "act2_round1", "act2_story_beat1", "act2_round2", "act2_story_beat2",
+            "act2_round1",
+            "act2_story_beat1",
+            "act2_round2",
+            "act2_story_beat2",
             "movement_break",
-            "act3_boss_intro", "act3_boss",
+            "act3_boss_intro",
+            "act3_boss",
             "silly_break",
-            "act4_review", "act4_treasure", "act4_lightning",
-            "act5_score", "act5_power_levels", "act5_cliffhanger", "act5_mission",
+            "act4_review",
+            "act4_treasure",
+            "act4_lightning",
+            "act5_score",
+            "act5_power_levels",
+            "act5_cliffhanger",
+            "act5_mission",
             "complete",
         ]
         try:
@@ -702,8 +795,9 @@ class WebSessionState:
     def save(self):
         """Save all session data."""
         self.team.sessions_completed = self.session_number
-        arc_num, _ = get_session_position(self.session_number)
+        arc_num, position = get_session_position(self.session_number)
         arc = get_arc(arc_num)
+        level = get_level(self.session_number)
         self.team.current_arc = arc_num
         self.team.current_chapter = self.session_number
         self.team.arc_name = arc["name"]
@@ -712,10 +806,39 @@ class WebSessionState:
             if char not in self.team.characters_met:
                 self.team.characters_met.append(char)
 
-        # Save cliffhanger
+        completed_level_id = level["level_id"]
+        if completed_level_id not in self.team.completed_levels:
+            self.team.completed_levels.append(completed_level_id)
+
+        reward_entry = {
+            "world_number": level["world_number"],
+            "world_name": level["world_name"],
+            "level_number": level["level_number"],
+            "level_name": level["level_name"],
+            "name": level["reward"]["name"],
+            "summary": level["reward"]["summary"],
+            "icon": level["reward"]["icon"],
+        }
+        self.team.current_reward = reward_entry
+        self.team.active_objective = level["objective"]
+        if reward_entry["name"] not in self.team.collected_relics:
+            self.team.collected_relics.append(reward_entry["name"])
+        self.team.items_collected = list(self.team.collected_relics)
+
+        unlocked_world_count = min(((self.session_number - 1) // 5) + 2, len(CAMPAIGN_WORLDS))
+        self.team.world_unlocks = [
+            get_arc(world_number)["name"] for world_number in range(1, unlocked_world_count + 1)
+        ]
+
+        next_session = min(self.session_number + 1, 25)
+        next_level = get_level(next_session)
+        self.team.current_world = next_level["world_number"]
+        self.team.current_level = next_level["level_number"]
+        self.team.story_flags = build_story_flags(self.session_number)
+        self.team.character_status = get_character_status(self.session_number)
+
         self.team.cliffhanger = get_cliffhanger(self.session_number)
 
-        # Save secret mission
         if self.session_number % 2 == 0:
             mission = get_secret_mission(self.session_number)
             self.team.secret_mission = {
@@ -763,6 +886,7 @@ def _load_children():
 
 
 # --- Routes ---
+
 
 @app.route("/")
 def index():
@@ -823,10 +947,98 @@ def end_session():
 def get_stats():
     children = _load_children()
     team = TeamState.load()
-    return jsonify({
-        "team": team.to_dict(),
-        "children": [c.to_dict() for c in children],
-    })
+    return jsonify(
+        {
+            "team": team.to_dict(),
+            "children": [c.to_dict() for c in children],
+        }
+    )
+
+
+@app.route("/api/generate-choices", methods=["POST"])
+def generate_choices():
+    """Generate multiple-choice options for a question.
+
+    Request body: {"question_id": str}
+    Response: {"options": [{"id": str, "text": str}]} - shuffled, correct first
+    """
+    global active_session
+    if not active_session:
+        return jsonify({"error": "No active session"}), 400
+
+    data = request.get_json(force=True, silent=True) or {}
+    question_id = data.get("question_id")
+
+    if not question_id:
+        return jsonify({"error": "question_id required"}), 400
+
+    # Find the question in the current question bank
+    question = None
+    for child_name, queue in active_session.session_queues.items():
+        for q, sr in queue.get("scheduled", []):
+            if q and q.id == question_id:
+                question = q
+                break
+        if question:
+            break
+
+    if not question:
+        return jsonify({"error": "Question not found"}), 404
+
+    # Generate distractors from same age group and subject
+    distractors = []
+
+    # Get age-appropriate questions from bank
+    age = None
+    for child in active_session.children.values():
+        if question.id in active_session.session_queues.get(child.name, {}).get(
+            "new", []
+        ):
+            age = child.age
+            break
+
+    if age:
+        # Get questions from same age group
+        from questions import get_questions_for_child
+
+        all_questions = get_questions_for_child(active_session.question_bank, age)
+
+        # Filter for same subject/topic if available
+        same_subject = []
+        for q in all_questions:
+            if q.id != question_id:
+                # Same format (e.g., both open-ended or both multiple choice)
+                if hasattr(q, "format") and hasattr(question, "format"):
+                    if q.format == question.format:
+                        same_subject.append(q)
+                else:
+                    # Simple: same subject
+                    if hasattr(q, "subject") and hasattr(question, "subject"):
+                        if q.subject == question.subject:
+                            same_subject.append(q)
+
+        # Pick 3 random distractors
+        random.shuffle(same_subject)
+        distractors = same_subject[:3]
+
+    # Combine correct answer with distractors, shuffle
+    all_options = question.correct_answers + distractors
+    random.shuffle(all_options)
+
+    # Ensure correct answer is first in options list (for frontend)
+    # Move correct answer to position 0
+    if question.correct_answers and question.correct_answers[0] in all_options:
+        correct_answer = question.correct_answers[0]
+        all_options.remove(correct_answer)
+        all_options.insert(0, correct_answer)
+
+    # Create option objects with IDs
+    options = [
+        {"id": f"opt_{i}", "text": opt}
+        for i, opt in enumerate(all_options[:4])  # Max 4 options
+    ]
+
+    return jsonify({"options": options})
 
 
 if __name__ == "__main__":

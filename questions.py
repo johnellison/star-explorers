@@ -10,6 +10,18 @@ def load_question_bank() -> list[Question]:
     """Load all questions from the question bank directory."""
     bank_dir = os.path.join(DATA_DIR, "question_bank")
     questions = []
+    required_fields = {
+        "id",
+        "subject",
+        "topic",
+        "difficulty_tier",
+        "age_range",
+        "read_aloud",
+        "correct_answers",
+        "correct_response",
+        "incorrect_response",
+        "hint",
+    }
 
     if not os.path.exists(bank_dir):
         return questions
@@ -21,9 +33,26 @@ def load_question_bank() -> list[Question]:
                 with open(filepath) as f:
                     data = json.load(f)
                 if isinstance(data, list):
-                    for item in data:
-                        questions.append(Question.from_dict(item))
-            except (json.JSONDecodeError, KeyError) as e:
+                    for index, item in enumerate(data):
+                        if not isinstance(item, dict):
+                            print(
+                                f"Warning: Skipping non-dict item in {filename} at index {index}"
+                            )
+                            continue
+                        missing = required_fields - set(item.keys())
+                        if missing:
+                            print(
+                                f"Warning: Skipping question in {filename} at index {index} "
+                                f"because it is missing fields: {sorted(missing)}"
+                            )
+                            continue
+                        try:
+                            questions.append(Question.from_dict(item))
+                        except (TypeError, ValueError) as item_error:
+                            print(
+                                f"Warning: Skipping invalid question in {filename} at index {index}: {item_error}"
+                            )
+            except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
                 print(f"Warning: Could not load {filename}: {e}")
 
     return questions

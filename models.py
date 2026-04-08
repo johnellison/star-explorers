@@ -211,13 +211,24 @@ class TeamState:
     current_arc: int = 1
     current_chapter: int = 1
     arc_name: str = "The Enchanted Forest"
+    current_world: int = 1
+    current_level: int = 1
     characters_met: list = field(default_factory=lambda: ["Captain Starlight"])
     items_collected: list = field(default_factory=list)
+    completed_levels: list = field(default_factory=list)
+    collected_relics: list = field(default_factory=list)
+    story_flags: dict = field(default_factory=dict)
+    active_objective: str = ""
+    current_reward: dict = field(default_factory=dict)
+    character_status: dict = field(default_factory=dict)
+    world_unlocks: list = field(default_factory=lambda: ["The Enchanted Forest"])
     cliffhanger: str = ""
     callbacks: list = field(default_factory=list)
     secret_mission: dict = field(default_factory=dict)
     lightning_round_record: int = 0
     rhyme_chain_record: int = 0
+    multiple_choice_mode: bool = False
+    tts_enabled: bool = False
 
     def to_dict(self):
         d = self.__dict__.copy()
@@ -226,10 +237,20 @@ class TeamState:
 
     @classmethod
     def from_dict(cls, d):
-        t = cls(**{k: v for k, v in d.items()
+        normalized = dict(d)
+        if "collected_relics" not in normalized and normalized.get("items_collected"):
+            normalized["collected_relics"] = list(normalized.get("items_collected", []))
+        if "completed_levels" not in normalized and normalized.get("sessions_completed", 0):
+            normalized["completed_levels"] = []
+        if "world_unlocks" not in normalized:
+            normalized["world_unlocks"] = [normalized.get("arc_name") or "The Enchanted Forest"]
+
+        t = cls(**{k: v for k, v in normalized.items()
                    if k in cls.__dataclass_fields__ and k != "callbacks"})
         t.callbacks = [Callback.from_dict(c) if isinstance(c, dict) else c
-                       for c in d.get("callbacks", [])]
+                       for c in normalized.get("callbacks", [])]
+        if not t.items_collected and t.collected_relics:
+            t.items_collected = list(t.collected_relics)
         return t
 
     def save(self):

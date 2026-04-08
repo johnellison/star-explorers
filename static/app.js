@@ -12,6 +12,7 @@ let pollTimer = null;
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playCorrectSound() {
+    ensureAudioReady();
     const now = audioCtx.currentTime;
     // Ascending C-E-G chime
     [261.63, 329.63, 392.00].forEach((freq, i) => {
@@ -28,9 +29,15 @@ function playCorrectSound() {
     });
 }
 
+function ensureAudioReady() {
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+    }
+}
+
 function playWrongSound() {
+    ensureAudioReady();
     const now = audioCtx.currentTime;
-    // Gentle descending two-note
     [300, 240].forEach((freq, i) => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -46,8 +53,8 @@ function playWrongSound() {
 }
 
 function playLaunchSound() {
+    ensureAudioReady();
     const now = audioCtx.currentTime;
-    // Rising sine sweep + noise whoosh
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'sine';
@@ -62,8 +69,8 @@ function playLaunchSound() {
 }
 
 function playBossIntroSound() {
+    ensureAudioReady();
     const now = audioCtx.currentTime;
-    // Low rumble + dramatic hit
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'sawtooth';
@@ -74,7 +81,7 @@ function playBossIntroSound() {
     gain.connect(audioCtx.destination);
     osc.start(now);
     osc.stop(now + 0.8);
-    // Hit
+
     const hit = audioCtx.createOscillator();
     const hitGain = audioCtx.createGain();
     hit.type = 'sine';
@@ -88,9 +95,9 @@ function playBossIntroSound() {
 }
 
 function playVictoryFanfare() {
+    ensureAudioReady();
     const now = audioCtx.currentTime;
-    // Ascending C-E-G-C5 with triangle waves
-    [261.63, 329.63, 392.00, 523.25].forEach((freq, i) => {
+    [261.63, 329.63, 392.0, 523.25].forEach((freq, i) => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'triangle';
@@ -105,9 +112,9 @@ function playVictoryFanfare() {
 }
 
 function playStreakSound() {
+    ensureAudioReady();
     const now = audioCtx.currentTime;
-    // Fast ascending arpeggio
-    [261.63, 329.63, 392.00, 523.25, 659.25].forEach((freq, i) => {
+    [261.63, 329.63, 392.0, 523.25, 659.25].forEach((freq, i) => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';
@@ -122,8 +129,8 @@ function playStreakSound() {
 }
 
 function playLightningSound() {
+    ensureAudioReady();
     const now = audioCtx.currentTime;
-    // Sharp electrical zap
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'sawtooth';
@@ -138,8 +145,8 @@ function playLightningSound() {
 }
 
 function playTransitionSound() {
+    ensureAudioReady();
     const now = audioCtx.currentTime;
-    // Soft filtered whoosh
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'sine';
@@ -154,27 +161,27 @@ function playTransitionSound() {
 }
 
 function playCelebrationSound() {
+    ensureAudioReady();
     const now = audioCtx.currentTime;
-    // Extended fanfare with vibrato sustain
-    [261.63, 329.63, 392.00, 523.25].forEach((freq, i) => {
+    [261.63, 329.63, 392.0, 523.25].forEach((freq, i) => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'triangle';
         osc.frequency.value = freq;
-        const dur = i === 3 ? 1.2 : 0.3;
+        const duration = i === 3 ? 1.2 : 0.3;
         gain.gain.setValueAtTime(0.15, now + i * 0.18);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.18 + dur);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.18 + duration);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.start(now + i * 0.18);
-        osc.stop(now + i * 0.18 + dur);
+        osc.stop(now + i * 0.18 + duration);
     });
 }
 
 function playAchievementSound() {
+    ensureAudioReady();
     const now = audioCtx.currentTime;
-    // Magical sustained chime with harmonic
-    [523.25, 1046.50].forEach((freq, i) => {
+    [523.25, 1046.5].forEach((freq, i) => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';
@@ -188,101 +195,147 @@ function playAchievementSound() {
     });
 }
 
+function playHammerHitSound(power = 1) {
+    ensureAudioReady();
+    const now = audioCtx.currentTime;
+
+    const thud = audioCtx.createOscillator();
+    const thudGain = audioCtx.createGain();
+    thud.type = 'square';
+    thud.frequency.setValueAtTime(180 + power * 30, now);
+    thud.frequency.exponentialRampToValueAtTime(90, now + 0.14);
+    thudGain.gain.setValueAtTime(0.12, now);
+    thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+    thud.connect(thudGain);
+    thudGain.connect(audioCtx.destination);
+    thud.start(now);
+    thud.stop(now + 0.16);
+
+    const ping = audioCtx.createOscillator();
+    const pingGain = audioCtx.createGain();
+    ping.type = 'triangle';
+    ping.frequency.setValueAtTime(720, now + 0.02);
+    ping.frequency.exponentialRampToValueAtTime(420, now + 0.12);
+    pingGain.gain.setValueAtTime(0.08, now + 0.02);
+    pingGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+    ping.connect(pingGain);
+    pingGain.connect(audioCtx.destination);
+    ping.start(now + 0.02);
+    ping.stop(now + 0.14);
+}
+
+function playBridgeFixedSound() {
+    ensureAudioReady();
+    const now = audioCtx.currentTime;
+    [392.0, 523.25, 659.25, 784.0].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.14, now + i * 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.45);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + i * 0.1);
+        osc.stop(now + i * 0.1 + 0.45);
+    });
+}
+
 // --- Starfield ---
 
 function createStarfield() {
     const sf = $('#starfield');
     sf.innerHTML = '';
 
-    // Nebula patches — large blurred color blobs
     const nebulaColors = [
         'radial-gradient(circle, rgba(199,125,255,0.4), transparent 70%)',
         'radial-gradient(circle, rgba(123,47,247,0.3), transparent 70%)',
         'radial-gradient(circle, rgba(160,196,255,0.3), transparent 70%)',
     ];
-    for (let i = 0; i < 3; i++) {
+
+    for (let i = 0; i < 3; i += 1) {
         const patch = document.createElement('div');
         patch.className = 'nebula-patch';
         const size = 300 + Math.random() * 400;
-        patch.style.width = size + 'px';
-        patch.style.height = size + 'px';
-        patch.style.left = (10 + Math.random() * 80) + '%';
-        patch.style.top = (10 + Math.random() * 80) + '%';
+        patch.style.width = `${size}px`;
+        patch.style.height = `${size}px`;
+        patch.style.left = `${10 + Math.random() * 80}%`;
+        patch.style.top = `${10 + Math.random() * 80}%`;
         patch.style.background = nebulaColors[i];
         sf.appendChild(patch);
     }
 
-    // Stars — varied colors and sizes
     const starColors = [
         { color: '#ffffff', weight: 55 },
-        { color: '#a0c4ff', weight: 18 },   // star-blue
-        { color: '#c77dff', weight: 12 },   // nebula purple
-        { color: '#fff5e0', weight: 8 },    // warm white
-        { color: '#72efdd', weight: 7 },    // cosmic teal
+        { color: '#a0c4ff', weight: 18 },
+        { color: '#c77dff', weight: 12 },
+        { color: '#fff5e0', weight: 8 },
+        { color: '#72efdd', weight: 7 },
     ];
 
     function pickStarColor() {
-        const total = starColors.reduce((s, c) => s + c.weight, 0);
-        let r = Math.random() * total;
-        for (const sc of starColors) {
-            r -= sc.weight;
-            if (r <= 0) return sc.color;
+        const total = starColors.reduce((sum, item) => sum + item.weight, 0);
+        let pick = Math.random() * total;
+        for (const item of starColors) {
+            pick -= item.weight;
+            if (pick <= 0) return item.color;
         }
         return '#ffffff';
     }
 
-    const count = 120;
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < 120; i += 1) {
         const star = document.createElement('div');
         star.className = 'star';
         const size = Math.random() * 3.5 + 0.8;
         const color = pickStarColor();
-        star.style.width = size + 'px';
-        star.style.height = size + 'px';
-        star.style.left = Math.random() * 100 + '%';
-        star.style.top = Math.random() * 100 + '%';
+        star.style.width = `${size}px`;
+        star.style.height = `${size}px`;
+        star.style.left = `${Math.random() * 100}%`;
+        star.style.top = `${Math.random() * 100}%`;
         star.style.background = color;
         if (size > 2.5) {
             star.style.boxShadow = `0 0 ${size * 2}px ${color}`;
         }
-        star.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
+        star.style.setProperty('--duration', `${Math.random() * 3 + 2}s`);
         star.style.setProperty('--max-opacity', Math.random() * 0.6 + 0.4);
-        star.style.animationDelay = Math.random() * 5 + 's';
+        star.style.animationDelay = `${Math.random() * 5}s`;
         sf.appendChild(star);
     }
 }
-
-// --- Shooting Stars ---
 
 function spawnShootingStar() {
     const sf = $('#starfield');
     const star = document.createElement('div');
     star.className = 'shooting-star';
-    star.style.left = Math.random() * 60 + '%';
-    star.style.top = Math.random() * 50 + '%';
+    star.style.left = `${Math.random() * 60}%`;
+    star.style.top = `${Math.random() * 50}%`;
 
     const angle = 20 + Math.random() * 30;
     const distance = 250 + Math.random() * 200;
-    const dx = Math.cos(angle * Math.PI / 180) * distance;
-    const dy = Math.sin(angle * Math.PI / 180) * distance;
+    const dx = Math.cos((angle * Math.PI) / 180) * distance;
+    const dy = Math.sin((angle * Math.PI) / 180) * distance;
     const duration = 600 + Math.random() * 400;
 
     sf.appendChild(star);
-    star.animate([
-        { transform: 'translateX(0) translateY(0)', opacity: 1 },
-        { transform: `translateX(${dx}px) translateY(${dy}px)`, opacity: 0 },
-    ], { duration, easing: 'ease-out' });
+    star.animate(
+        [
+            { transform: 'translateX(0) translateY(0)', opacity: 1 },
+            { transform: `translateX(${dx}px) translateY(${dy}px)`, opacity: 0 },
+        ],
+        { duration, easing: 'ease-out' }
+    );
     setTimeout(() => star.remove(), duration);
 }
 
 function startShootingStars() {
     function scheduleNext() {
-        const delay = 12000 + Math.random() * 20000; // 12-32 seconds
+        const delay = 12000 + Math.random() * 20000;
         setTimeout(() => {
             spawnShootingStar();
             scheduleNext();
         }, delay);
     }
+
     scheduleNext();
 }
 
@@ -291,29 +344,28 @@ function startShootingStars() {
 function spawnStarBurst(x, y) {
     const container = $('#particles');
     const emojis = ['⭐', '✨', '🌟', '💫'];
-    for (let i = 0; i < 12; i++) {
-        const p = document.createElement('div');
-        p.className = 'star-particle';
-        p.textContent = emojis[i % emojis.length];
+    for (let i = 0; i < 12; i += 1) {
+        const particle = document.createElement('div');
+        particle.className = 'star-particle';
+        particle.textContent = emojis[i % emojis.length];
         const angle = (i / 12) * Math.PI * 2;
-        const dist = 80 + Math.random() * 60;
-        p.style.left = x + 'px';
-        p.style.top = y + 'px';
-        p.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
-        p.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
-        p.style.animation = 'none';
-        p.style.fontSize = (18 + Math.random() * 16) + 'px';
-
-        const keyframes = [
-            { transform: 'translate(0, 0) scale(1)', opacity: 1 },
-            {
-                transform: `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px) scale(0.3)`,
-                opacity: 0,
-            },
-        ];
-        container.appendChild(p);
-        p.animate(keyframes, { duration: 800 + Math.random() * 400, easing: 'ease-out' });
-        setTimeout(() => p.remove(), 1200);
+        const distance = 80 + Math.random() * 60;
+        particle.style.left = `${x}px`;
+        particle.style.top = `${y}px`;
+        particle.style.animation = 'none';
+        particle.style.fontSize = `${18 + Math.random() * 16}px`;
+        container.appendChild(particle);
+        particle.animate(
+            [
+                { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+                {
+                    transform: `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px) scale(0.3)`,
+                    opacity: 0,
+                },
+            ],
+            { duration: 800 + Math.random() * 400, easing: 'ease-out' }
+        );
+        setTimeout(() => particle.remove(), 1200);
     }
 }
 
@@ -330,31 +382,26 @@ function showPointsPopup(points) {
 function showCascade() {
     const container = $('#particles');
     const emojis = ['⭐', '🌟', '✨', '🏆', '💫'];
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 20; i += 1) {
         setTimeout(() => {
-            const p = document.createElement('div');
-            p.className = 'star-particle';
-            p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-            p.style.left = Math.random() * window.innerWidth + 'px';
-            p.style.top = '-40px';
-            p.style.fontSize = (20 + Math.random() * 20) + 'px';
-            container.appendChild(p);
-            setTimeout(() => p.remove(), 2200);
+            const particle = document.createElement('div');
+            particle.className = 'star-particle';
+            particle.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            particle.style.left = `${Math.random() * window.innerWidth}px`;
+            particle.style.top = '-40px';
+            particle.style.fontSize = `${20 + Math.random() * 20}px`;
+            container.appendChild(particle);
+            setTimeout(() => particle.remove(), 2200);
         }, i * 100);
     }
 }
-
-// --- Celebration Effects ---
 
 function showScreenFlash(color) {
     const flash = document.createElement('div');
     flash.className = 'screen-flash';
     flash.style.background = color;
     document.body.appendChild(flash);
-    flash.animate([
-        { opacity: 0.3 },
-        { opacity: 0 },
-    ], { duration: 250, easing: 'ease-out' });
+    flash.animate([{ opacity: 0.3 }, { opacity: 0 }], { duration: 250, easing: 'ease-out' });
     setTimeout(() => flash.remove(), 250);
 }
 
@@ -363,32 +410,38 @@ function showCometTrail() {
     const comet = document.createElement('div');
     comet.className = 'comet-trail';
     comet.style.left = '-20px';
-    comet.style.top = (10 + Math.random() * 40) + '%';
+    comet.style.top = `${10 + Math.random() * 40}%`;
     container.appendChild(comet);
 
-    comet.animate([
-        { transform: 'translateX(0)', opacity: 1 },
-        { transform: `translateX(${window.innerWidth + 100}px)`, opacity: 0 },
-    ], { duration: 1200, easing: 'ease-in' });
+    comet.animate(
+        [
+            { transform: 'translateX(0)', opacity: 1 },
+            { transform: `translateX(${window.innerWidth + 100}px)`, opacity: 0 },
+        ],
+        { duration: 1200, easing: 'ease-in' }
+    );
 
-    // Trail particles
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 6; i += 1) {
         setTimeout(() => {
             const trail = document.createElement('div');
             trail.className = 'comet-trail';
-            trail.style.left = (i * 15) + '%';
+            trail.style.left = `${i * 15}%`;
             trail.style.top = comet.style.top;
             trail.style.width = '4px';
             trail.style.height = '4px';
             trail.style.opacity = '0.5';
             container.appendChild(trail);
-            trail.animate([
-                { opacity: 0.5, transform: 'scale(1)' },
-                { opacity: 0, transform: 'scale(0.2)' },
-            ], { duration: 400, easing: 'ease-out' });
+            trail.animate(
+                [
+                    { opacity: 0.5, transform: 'scale(1)' },
+                    { opacity: 0, transform: 'scale(0.2)' },
+                ],
+                { duration: 400, easing: 'ease-out' }
+            );
             setTimeout(() => trail.remove(), 400);
         }, i * 100);
     }
+
     setTimeout(() => comet.remove(), 1300);
 }
 
@@ -403,34 +456,40 @@ function showRocketLaunch() {
     rocket.style.animation = 'none';
     container.appendChild(rocket);
 
-    rocket.animate([
-        { transform: 'translateY(0) scale(1) rotate(0deg)', opacity: 1 },
-        { transform: 'translateY(-100vh) scale(0.3) rotate(-15deg)', opacity: 0 },
-    ], { duration: 1500, easing: 'ease-in' });
+    rocket.animate(
+        [
+            { transform: 'translateY(0) scale(1) rotate(0deg)', opacity: 1 },
+            { transform: 'translateY(-100vh) scale(0.3) rotate(-15deg)', opacity: 0 },
+        ],
+        { duration: 1500, easing: 'ease-in' }
+    );
 
-    // Exhaust particles
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 15; i += 1) {
         setTimeout(() => {
             const exhaust = document.createElement('div');
             exhaust.className = 'star-particle';
             exhaust.textContent = ['🔥', '💨', '✨'][i % 3];
-            exhaust.style.left = (48 + Math.random() * 4) + '%';
-            exhaust.style.top = (85 - i * 4) + '%';
+            exhaust.style.left = `${48 + Math.random() * 4}%`;
+            exhaust.style.top = `${85 - i * 4}%`;
             exhaust.style.fontSize = '20px';
             exhaust.style.animation = 'none';
             container.appendChild(exhaust);
-            exhaust.animate([
-                { opacity: 1, transform: 'scale(1)' },
-                { opacity: 0, transform: `scale(0.3) translateY(${50 + Math.random() * 50}px)` },
-            ], { duration: 600, easing: 'ease-out' });
+            exhaust.animate(
+                [
+                    { opacity: 1, transform: 'scale(1)' },
+                    { opacity: 0, transform: `scale(0.3) translateY(${50 + Math.random() * 50}px)` },
+                ],
+                { duration: 600, easing: 'ease-out' }
+            );
             setTimeout(() => exhaust.remove(), 600);
         }, i * 80);
     }
+
     setTimeout(() => rocket.remove(), 1500);
 }
 
 function showFireworks(count) {
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < count; i += 1) {
         setTimeout(() => {
             const x = 100 + Math.random() * (window.innerWidth - 200);
             const y = 50 + Math.random() * (window.innerHeight * 0.5);
@@ -448,8 +507,11 @@ function showScreenShake() {
 function showExpandingRing() {
     const ring = document.createElement('div');
     ring.style.cssText = `
-        position: fixed; top: 50%; left: 50%;
-        width: 80px; height: 80px;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 80px;
+        height: 80px;
         border: 3px solid var(--gold);
         border-radius: 50%;
         pointer-events: none;
@@ -457,43 +519,173 @@ function showExpandingRing() {
         transform: translate(-50%, -50%) scale(0);
     `;
     document.body.appendChild(ring);
-    ring.animate([
-        { transform: 'translate(-50%, -50%) scale(0)', opacity: 0.8, borderWidth: '3px' },
-        { transform: 'translate(-50%, -50%) scale(4)', opacity: 0, borderWidth: '1px' },
-    ], { duration: 800, easing: 'ease-out' });
+    ring.animate(
+        [
+            { transform: 'translate(-50%, -50%) scale(0)', opacity: 0.8, borderWidth: '3px' },
+            { transform: 'translate(-50%, -50%) scale(4)', opacity: 0, borderWidth: '1px' },
+        ],
+        { duration: 800, easing: 'ease-out' }
+    );
     setTimeout(() => ring.remove(), 800);
 }
 
 function animateScoreCounter(element, from, to, duration = 1500) {
     const start = performance.now();
+
     function update(now) {
         const elapsed = now - start;
         const progress = Math.min(elapsed / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
         element.textContent = Math.round(from + (to - from) * eased);
         if (progress < 1) requestAnimationFrame(update);
     }
+
     requestAnimationFrame(update);
 }
 
-// --- Screen Transitions ---
-
 let lastScreen = null;
+let bridgeRepairState = { key: null, hits: 0, requiredHits: 6, complete: false };
 
 function transitionTo(renderFn, transitionClass = 'fade-in') {
     const main = content();
     main.style.animation = 'none';
-    main.offsetHeight; // force reflow
+    main.offsetHeight;
     main.style.animation = `${transitionClass} 0.35s ease`;
     playTransitionSound();
     renderFn();
 }
 
-// --- Scene Image Helper ---
-
 function imageHtml(src, alt) {
     if (!src) return '';
     return `<img src="${src}" alt="${alt || ''}" class="scene-image" onerror="this.style.display='none'" />`;
+}
+
+// --- Text-to-Speech (Web Speech API) ---
+
+class TextToSpeech {
+    constructor() {
+        this.synth = window.speechSynthesis;
+        this.enabled = true;
+        this.voice = null;
+        this.rate = 0.9;  // Slower for kids
+        this.pitch = 1.1;  // Slightly higher for friendlier voice
+        this.currentUtterance = null;
+        
+        // Initialize voices
+        if (this.synth) {
+            this.loadVoices();
+        }
+    }
+    
+    loadVoices() {
+        // Wait for voices to load
+        if (this.synth.getVoices().length > 0) {
+            this.voices = this.synth.getVoices();
+            this.selectChildFriendlyVoice();
+        }
+    }
+    
+    selectChildFriendlyVoice() {
+        // Prefer child-friendly voices (higher pitch, slower)
+        const preferred = this.voices.filter(v => 
+            v.lang.startsWith('en') && 
+            (v.name.includes('Google US') || 
+             v.name.includes('Samantha') ||
+             v.name.includes('Microsoft') ||
+             v.name.includes('Daniel'))
+        );
+        
+        if (preferred.length > 0) {
+            this.voice = preferred[0];
+        } else if (this.voices.length > 0) {
+            this.voice = this.voices[0];
+        }
+    }
+    
+    speak(text, onEndCallback = null) {
+        if (!this.enabled || !this.synth) {
+            console.log('TTS not enabled or not supported');
+            return;
+        }
+        
+        // Cancel any ongoing speech
+        if (this.currentUtterance) {
+            this.synth.cancel();
+        }
+        
+        const utterance = new SpeechSynthesisUtterance();
+        utterance.text = text;
+        utterance.voice = this.voice;
+        utterance.rate = this.rate;
+        utterance.pitch = this.pitch;
+        
+        if (onEndCallback) {
+            utterance.onend = onEndCallback;
+        }
+        
+        this.synth.speak(utterance);
+        this.currentUtterance = utterance;
+    }
+    
+    stop() {
+        if (this.currentUtterance) {
+            this.synth.cancel();
+            this.currentUtterance = null;
+        }
+    }
+    
+    setEnabled(enabled) {
+        this.enabled = enabled;
+    }
+    
+    setVoice(voiceName) {
+        this.voice = this.voices.find(v => v.name === voiceName) || this.voice;
+    }
+    
+    speakQuestion(question) {
+        if (!this.enabled || !question) return;
+        
+        // Speak the question text
+        this.speak(question.read_aloud);
+        
+        // If there are multiple-choice options, speak them too
+        if (question.correct_answers && question.correct_answers.length > 0) {
+            const optionsText = question.correct_answers.slice(0, 3).join(', or ');
+            setTimeout(() => {
+                this.speak(`Options: ${optionsText}`);
+            }, 500);
+        }
+    }
+    
+    speakCorrectResponse(question) {
+        if (!this.enabled || !question) return;
+        setTimeout(() => {
+            this.speak(question.correct_response);
+        }, 200);
+    }
+    
+    speakWrongResponse(question) {
+        if (!this.enabled || !question) return;
+        setTimeout(() => {
+            this.speak(question.incorrect_response);
+        }, 200);
+    }
+}
+
+// Global TTS instance
+const tts = new TextToSpeech();
+
+function toggleTTS() {
+    tts.setEnabled(!tts.enabled);
+    if (state?.screen === 'question') {
+        renderScreen();
+    }
+}
+
+function speakCurrentQuestion() {
+    if (state && state.question) {
+        tts.speakQuestion(state.question);
+    }
 }
 
 // --- API Calls ---
@@ -584,7 +776,10 @@ function updateStatusBar() {
         $('#timer-display').textContent = '';
         return;
     }
-    $('#session-info').textContent = `Session #${state.session_number} | ${state.arc_name || ''}`;
+    const worldLevel = state.world_number && state.level_number
+        ? `World ${state.world_number} · Level ${state.level_number}`
+        : state.arc_name || '';
+    $('#session-info').textContent = `Session #${state.session_number} | ${worldLevel}`;
     $('#score-display').textContent = `${state.team_score} pts`;
     $('#timer-display').textContent = `${state.elapsed_minutes || 0} min`;
 }
@@ -593,6 +788,7 @@ function updateStatusBar() {
 
 function renderScreen() {
     updateStatusBar();
+    cleanupMultipleChoiceKeyboard();
 
     if (!state || state.phase === 'no_session') {
         renderNoSession();
@@ -634,6 +830,108 @@ function renderScreen() {
     lastScreen = screen;
 }
 
+function getCampaign() {
+    return state?.campaign || {};
+}
+
+function renderCharacterChips(characters = []) {
+    if (!characters.length) return '';
+    const chips = characters.map((character) => `
+        <div class="campaign-chip">
+            <span class="campaign-chip-name">${character.name}</span>
+            <span class="campaign-chip-role">${character.role || ''}</span>
+        </div>
+    `).join('');
+    return `<div class="campaign-chip-row">${chips}</div>`;
+}
+
+function renderCampaignMap(campaign = getCampaign(), compact = false) {
+    if (!campaign.worlds?.length || !campaign.map_nodes?.length) return '';
+
+    const worldHtml = campaign.worlds.map((world) => {
+        const nodes = campaign.map_nodes
+            .filter((node) => node.world_number === world.world_number)
+            .map((node) => `
+                <div class="campaign-node ${node.completed ? 'completed' : ''} ${node.current ? 'current' : ''} ${node.unlocked ? 'unlocked' : 'locked'}">
+                    <div class="campaign-node-badge">${node.level_number}</div>
+                    <div class="campaign-node-name">${node.level_name}</div>
+                </div>
+            `)
+            .join('');
+
+        return `
+            <div class="campaign-world ${world.completed ? 'completed' : ''} ${world.unlocked ? 'unlocked' : 'locked'}">
+                <div class="campaign-world-header">
+                    <div class="campaign-world-title">World ${world.world_number}: ${world.name}</div>
+                    <div class="campaign-world-progress">${world.levels_completed}/5 cleared</div>
+                </div>
+                <div class="campaign-world-theme">${world.theme}</div>
+                <div class="campaign-node-row">${nodes}</div>
+            </div>
+        `;
+    }).join('');
+
+    return `
+        <div class="campaign-map ${compact ? 'compact' : ''}">
+            <div class="campaign-map-header">
+                <div class="campaign-map-title">Adventure Route</div>
+                <div class="campaign-map-progress">${campaign.progress_copy || ''}</div>
+            </div>
+            ${worldHtml}
+        </div>
+    `;
+}
+
+function renderObjectiveBanner(compact = false) {
+    const campaign = getCampaign();
+    if (!campaign.level_name) return '';
+
+    return `
+        <div class="objective-banner ${compact ? 'compact' : ''}">
+            <div class="objective-kicker">${campaign.objective_label || ''}</div>
+            <div class="objective-title">${campaign.level_name}</div>
+            <div class="objective-text">${state.active_objective || campaign.objective || ''}</div>
+            ${renderCharacterChips(campaign.characters_in_scene || [])}
+        </div>
+    `;
+}
+
+function renderRewardCard(reward, title = 'Reward Earned') {
+    if (!reward || !reward.name) return '';
+    return `
+        <div class="reward-card">
+            <div class="reward-card-kicker">${title}</div>
+            <div class="reward-card-main">
+                <div class="reward-card-icon">${reward.icon || '⭐'}</div>
+                <div>
+                    <div class="reward-card-name">${reward.name}</div>
+                    <div class="reward-card-summary">${reward.summary || ''}</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderNextLevelCard(nextLevel, worldComplete = false) {
+    if (!nextLevel) {
+        return `
+            <div class="next-level-card final">
+                <div class="next-level-kicker">Campaign Finale</div>
+                <div class="next-level-title">All 25 Levels Cleared</div>
+                <div class="next-level-text">The Star Explorers restored every world and completed the full campaign.</div>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="next-level-card ${worldComplete ? 'world-complete' : ''}">
+            <div class="next-level-kicker">${worldComplete ? 'World Clear' : 'Next Level Unlocked'}</div>
+            <div class="next-level-title">World ${nextLevel.world_number} · Level ${nextLevel.level_number}: ${nextLevel.level_name}</div>
+            <div class="next-level-text">${nextLevel.objective}</div>
+        </div>
+    `;
+}
+
 function renderNoSession() {
     content().innerHTML = `
         <div class="no-session">
@@ -652,6 +950,7 @@ function renderNoSession() {
 function renderPreSession() {
     const children = state.children || {};
     const date = state.date || '';
+    const campaign = getCampaign();
 
     let childCards = '';
     for (const [name, c] of Object.entries(children)) {
@@ -686,24 +985,105 @@ function renderPreSession() {
     const team = state.team || {};
 
     content().innerHTML = `
-        <div class="dashboard-title">MISSION CONTROL</div>
+        <div class="dashboard-title">CAMPAIGN MAP</div>
         <div class="dashboard-subtitle">Session #${state.session_number} | ${date}</div>
-        ${childCards}
-        <div class="card" style="text-align: center;">
+        <div class="card mission-brief-card">
             ${imageHtml(state.image, state.arc_name)}
-            <div style="color: var(--purple); font-size: 16px;">${state.arc_name}</div>
-            <div style="color: var(--dim); font-size: 14px; margin-top: 4px;">
+            ${renderObjectiveBanner()}
+            <div class="mission-brief-meta">
                 Total Adventure Points: ${team.total_adventure_points || 0} |
                 Achievements: ${(team.achievements || []).length}
             </div>
+            ${renderRewardCard(team.current_reward, 'Latest Relic')}
+            ${renderNextLevelCard(campaign.next_level, campaign.world_complete)}
         </div>
+        <div class="card">${renderCampaignMap(campaign)}</div>
+        <div class="team-card-grid">${childCards}</div>
     `;
 
     controlsBar().innerHTML = `
         <button class="ctrl-btn launch" onclick="doAction('continue')">
-            🚀 Launch Mission
+            🚀 Start Level
         </button>
     `;
+}
+
+// Multiple-choice rendering
+async function fetchMultipleChoiceOptions(questionId) {
+    try {
+        const response = await fetch('/api/generate-choices', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ question_id: questionId }),
+        });
+        
+        if (!response.ok) {
+            console.error('Failed to fetch multiple-choice options:', response.status);
+            return [];
+        }
+        
+        const data = await response.json();
+        return data.options || [];
+    } catch (error) {
+        console.error('Error fetching multiple-choice options:', error);
+        return [];
+    }
+}
+
+function renderMultipleChoice(options) {
+    if (!options || options.length === 0) {
+        return;
+    }
+    
+    // Create button HTML for each option
+    const buttonsHtml = options.map((opt, index) => `
+        <button class="choice-button" data-option-id="${opt.id}" data-option-text="${opt.text}" onclick="handleChoiceSelect(event)">
+            <span class="option-letter">${String.fromCharCode(65 + index)}</span>
+            <span class="option-text">${opt.text}</span>
+        </button>
+    `).join('');
+    
+    return `
+        <div class="multiple-choice-container">
+            <div class="choice-label">Choose the right answer:</div>
+            <div class="choice-buttons">${buttonsHtml}</div>
+        </div>
+    `;
+}
+
+function handleChoiceSelect(event) {
+    const button = event.currentTarget;
+    const optionText = button.dataset.optionText;
+    const question = state.question;
+    
+    // Check if this is the correct answer
+    const isCorrect = question && question.correct_answers && 
+                      question.correct_answers.includes(optionText);
+    
+    // Visual feedback
+    document.querySelectorAll('.choice-button').forEach(btn => {
+        btn.disabled = true;  // Disable all buttons
+    });
+    
+    if (isCorrect) {
+        button.classList.add('correct');
+        button.classList.remove('wrong');
+        playCorrectSound();
+        // Auto-continue after 2 seconds
+        setTimeout(() => {
+            doAction('correct');
+        }, 2000);
+    } else {
+        button.classList.add('wrong');
+        button.classList.remove('correct');
+        playWrongSound();
+        // Auto-continue after 2 seconds
+        setTimeout(() => {
+            doAction('wrong');
+        }, 2000);
+    }
 }
 
 function renderQuestion() {
@@ -714,6 +1094,7 @@ function renderQuestion() {
     const isLightning = state.is_lightning;
     const isBoss = state.is_boss;
     const isTreasure = state.is_treasure;
+    const useMultipleChoice = state.multiple_choice_mode === true;
 
     let borderClass = '';
     if (isBoss) borderClass = 'boss-border';
@@ -730,37 +1111,123 @@ function renderQuestion() {
         headerExtra += `<div style="text-align:center; color: var(--dim); font-size: 13px; margin-bottom: 8px;">${state.remaining} remaining</div>`;
     }
 
-    content().innerHTML = `
-        <div class="phase-label">${label}</div>
-        ${headerExtra}
-        <div class="child-turn ${cssClass}">${child}'s Turn</div>
-        <div class="card ${borderClass}">
-            <div class="read-aloud">${q.read_aloud}</div>
-            <div class="answer-line">Answer: <strong>${q.correct_answers.join(' / ')}</strong></div>
-            <div class="response-scripts">
-                <div><span class="label if-correct">IF CORRECT:</span> ${q.correct_response}</div>
-                ${q.metacognitive_prompt ? `<div style="color: var(--cyan); margin-left: 20px;">${q.metacognitive_prompt}</div>` : ''}
-                <div><span class="label if-wrong">IF WRONG:</span> ${q.incorrect_response}</div>
-                ${q.mnemonic ? `<div style="color: var(--purple); margin-left: 20px;">MNEMONIC: ${q.mnemonic}</div>` : ''}
-                <div><span class="label if-stuck">IF STUCK:</span> ${q.hint}</div>
-            </div>
-        </div>
-    `;
+    if (useMultipleChoice && q && q.id) {
+        const questionId = q.id;
+        fetchMultipleChoiceOptions(questionId).then(options => {
+            if (!state || state.screen !== 'question' || state.question?.id !== questionId || state.multiple_choice_mode !== true) {
+                return;
+            }
 
-    controlsBar().innerHTML = `
-        <button class="ctrl-btn correct" onclick="doAction('correct')">
-            Correct <span class="ctrl-shortcut">Enter</span>
-        </button>
-        <button class="ctrl-btn wrong" onclick="doAction('wrong')">
-            Wrong <span class="ctrl-shortcut">N</span>
-        </button>
-        <button class="ctrl-btn hint" onclick="doAction('hint')">
-            Hint <span class="ctrl-shortcut">H</span>
-        </button>
-        <button class="ctrl-btn skip" onclick="doAction('skip')">
-            Skip <span class="ctrl-shortcut">S</span>
-        </button>
-    `;
+            const multipleChoiceHtml = renderMultipleChoice(options);
+
+            content().innerHTML = `
+                ${renderObjectiveBanner(true)}
+                <div class="phase-label">${label}</div>
+                ${headerExtra}
+                <div class="child-turn ${cssClass}">${child}'s Turn</div>
+                <div class="card ${borderClass}">
+                    <div class="read-aloud">${q.read_aloud}</div>
+                    ${multipleChoiceHtml}
+                </div>
+            `;
+
+            setupMultipleChoiceKeyboard(options);
+            if (q && q.read_aloud) {
+                tts.speakQuestion(q);
+            }
+        });
+
+        controlsBar().innerHTML = `
+            <button class="ctrl-btn toggle" onclick="toggleMultipleChoiceMode()">
+                ${state.multiple_choice_mode ? '☐ Standard' : '☑ Multiple Choice'}
+            </button>
+            <button class="ctrl-btn tts" onclick="toggleTTS()">
+                ${tts.enabled ? '🔊 Sound On' : '🔇 Sound Off'}
+            </button>
+            <button class="ctrl-btn speak-again" onclick="speakCurrentQuestion()">
+                🔁 Speak Again
+            </button>
+            <button class="ctrl-btn skip" onclick="doAction('skip')">
+                Skip <span class="ctrl-shortcut">S</span>
+            </button>
+        `;
+    } else {
+        content().innerHTML = `
+            ${renderObjectiveBanner(true)}
+            <div class="phase-label">${label}</div>
+            ${headerExtra}
+            <div class="child-turn ${cssClass}">${child}'s Turn</div>
+            <div class="card ${borderClass}">
+                <div class="read-aloud">${q.read_aloud}</div>
+                <div class="answer-line">Answer: <strong>${q.correct_answers.join(' / ')}</strong></div>
+                <div class="response-scripts">
+                    <div><span class="label if-correct">IF CORRECT:</span> ${q.correct_response}</div>
+                    <div><span class="label if-wrong">IF WRONG:</span> ${q.incorrect_response}</div>
+                    ${q.metacognitive_prompt ? `<div style="color: var(--cyan); margin-left: 20px;">${q.metacognitive_prompt}</div>` : ''}
+                    ${q.mnemonic ? `<div style="color: var(--purple); margin-left: 20px;">MNEMONIC: ${q.mnemonic}</div>` : ''}
+                    <div><span class="label if-stuck">IF STUCK:</span> ${q.hint}</div>
+                </div>
+            </div>
+        `;
+
+        if (q && q.read_aloud) {
+            tts.speakQuestion(q);
+        }
+
+        controlsBar().innerHTML = `
+            <button class="ctrl-btn correct" onclick="doAction('correct')">
+                Correct <span class="ctrl-shortcut">Enter</span>
+            </button>
+            <button class="ctrl-btn wrong" onclick="doAction('wrong')">
+                Wrong <span class="ctrl-shortcut">N</span>
+            </button>
+            <button class="ctrl-btn hint" onclick="doAction('hint')">
+                Hint <span class="ctrl-shortcut">H</span>
+            </button>
+            <button class="ctrl-btn toggle" onclick="toggleMultipleChoiceMode()">
+                ${state.multiple_choice_mode ? '☐ Standard' : '☑ Multiple Choice'}
+            </button>
+            <button class="ctrl-btn tts" onclick="toggleTTS()">
+                ${tts.enabled ? '🔊 Sound On' : '🔇 Sound Off'}
+            </button>
+            <button class="ctrl-btn speak-again" onclick="speakCurrentQuestion()">
+                🔁 Speak Again
+            </button>
+            <button class="ctrl-btn skip" onclick="doAction('skip')">
+                Skip <span class="ctrl-shortcut">S</span>
+            </button>
+        `;
+    }
+}
+
+function setupMultipleChoiceKeyboard(options) {
+    cleanupMultipleChoiceKeyboard();
+
+    const handleKeyPress = (event) => {
+        if (event.key >= '1' && event.key <= '4') {
+            event.preventDefault();
+            const optionIndex = parseInt(event.key) - 1;
+            const buttons = document.querySelectorAll('.choice-button');
+            if (buttons[optionIndex] && !buttons[optionIndex].disabled) {
+                buttons[optionIndex].click();
+            }
+        }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    window.multipleChoiceKeyboardHandler = handleKeyPress;
+}
+
+function cleanupMultipleChoiceKeyboard() {
+    if (window.multipleChoiceKeyboardHandler) {
+        document.removeEventListener('keydown', window.multipleChoiceKeyboardHandler);
+        window.multipleChoiceKeyboardHandler = null;
+    }
+}
+
+function toggleMultipleChoiceMode() {
+    state.multiple_choice_mode = !state.multiple_choice_mode;
+    renderScreen();
 }
 
 function renderStory() {
@@ -769,6 +1236,7 @@ function renderStory() {
     const style = state.style === 'adventure' ? 'gold-border' : 'purple-border';
 
     content().innerHTML = `
+        ${renderObjectiveBanner(true)}
         <div class="card ${style}">
             <div class="story-panel">
                 ${imageHtml(state.image, title)}
@@ -785,28 +1253,211 @@ function renderStory() {
     controlsBar().innerHTML = btns;
 }
 
+function getBridgeRepairKey() {
+    return `${state?.session_number || 0}:${state?.phase || ''}:${state?.text || ''}`;
+}
+
+function syncBridgeRepairState() {
+    const key = getBridgeRepairKey();
+    if (bridgeRepairState.key !== key) {
+        bridgeRepairState = {
+            key,
+            hits: 0,
+            requiredHits: 6,
+            complete: false,
+        };
+    }
+}
+
+function getBridgeStatusText() {
+    if (bridgeRepairState.complete) {
+        return 'Bridge fixed. Charge across!';
+    }
+    const remaining = bridgeRepairState.requiredHits - bridgeRepairState.hits;
+    return `${remaining} more smash${remaining === 1 ? '' : 'es'} to fix the bridge`;
+}
+
+function bridgeRescueHtml() {
+    syncBridgeRepairState();
+
+    const planks = Array.from({ length: bridgeRepairState.requiredHits }, (_, index) => `
+        <div class="bridge-plank ${index < bridgeRepairState.hits ? 'repaired' : ''}"></div>
+    `).join('');
+
+    return `
+        <div class="bridge-rescue-panel ${bridgeRepairState.complete ? 'complete' : ''}" id="bridge-rescue-panel">
+            <div class="bridge-rescue-kicker">BROKEN BRIDGE RESCUE</div>
+            <div class="bridge-rescue-status" id="bridge-status-text">${getBridgeStatusText()}</div>
+            <div class="bridge-scene" id="bridge-scene">
+                <div class="bridge-cliff left"></div>
+                <div class="bridge-plank-row" id="bridge-plank-row">${planks}</div>
+                <div class="bridge-cliff right"></div>
+                <div class="bridge-gap-glow"></div>
+                <div class="bridge-helper">🧒</div>
+            </div>
+            <div class="bridge-progress">
+                <div class="bridge-progress-fill" id="bridge-progress-fill"></div>
+            </div>
+            <button class="bridge-hammer-btn ${bridgeRepairState.complete ? 'complete' : ''}" id="bridge-hammer-btn" onclick="hitBridgeNail()">
+                <span class="hammer-icon">🔨</span>
+                <span class="hammer-copy" id="bridge-hammer-copy">${bridgeRepairState.complete ? 'Bridge Fixed!' : 'Smash The Nail!'}</span>
+                <span class="hammer-subcopy" id="bridge-hammer-subcopy">${bridgeRepairState.complete ? 'Tap again for sparkles' : 'Tap to hammer new planks into place'}</span>
+            </button>
+        </div>
+    `;
+}
+
+function updateBridgeRepairUI(animate = false) {
+    const panel = $('#bridge-rescue-panel');
+    if (!panel) return;
+
+    panel.classList.toggle('complete', bridgeRepairState.complete);
+
+    const status = $('#bridge-status-text');
+    const progressFill = $('#bridge-progress-fill');
+    const hammerButton = $('#bridge-hammer-btn');
+    const hammerCopy = $('#bridge-hammer-copy');
+    const hammerSubcopy = $('#bridge-hammer-subcopy');
+    const planks = document.querySelectorAll('.bridge-plank');
+    const progressPercent = (bridgeRepairState.hits / bridgeRepairState.requiredHits) * 100;
+
+    if (status) status.textContent = getBridgeStatusText();
+    if (progressFill) progressFill.style.width = `${progressPercent}%`;
+    if (hammerButton) hammerButton.classList.toggle('complete', bridgeRepairState.complete);
+    if (hammerCopy) hammerCopy.textContent = bridgeRepairState.complete ? 'Bridge Fixed!' : 'Smash The Nail!';
+    if (hammerSubcopy) {
+        hammerSubcopy.textContent = bridgeRepairState.complete
+            ? 'Tap again for sparkles'
+            : 'Tap to hammer new planks into place';
+    }
+
+    planks.forEach((plank, index) => {
+        plank.classList.toggle('repaired', index < bridgeRepairState.hits);
+    });
+
+    const continueButton = document.querySelector('.ctrl-btn.continue');
+    if (continueButton) {
+        continueButton.innerHTML = bridgeRepairState.complete
+            ? 'Bridge Fixed! Continue <span class="ctrl-shortcut">Enter</span>'
+            : 'Done! Continue <span class="ctrl-shortcut">Enter</span>';
+    }
+
+    if (animate) {
+        panel.classList.remove('thump');
+        hammerButton?.classList.remove('impact');
+        void panel.offsetWidth;
+        panel.classList.add('thump');
+        hammerButton?.classList.add('impact');
+        setTimeout(() => {
+            panel.classList.remove('thump');
+            hammerButton?.classList.remove('impact');
+        }, 260);
+    }
+}
+
+function showBridgeHitBurst(target, celebrate = false) {
+    if (!target) return;
+
+    const rect = target.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 3;
+    const container = $('#particles');
+    const tokens = celebrate ? ['✨', '🌟', '⭐', '🪵'] : ['✨', '💥', '🪵'];
+    const count = celebrate ? 12 : 7;
+
+    for (let i = 0; i < count; i += 1) {
+        const particle = document.createElement('div');
+        particle.className = 'star-particle';
+        particle.textContent = tokens[i % tokens.length];
+        particle.style.left = `${centerX}px`;
+        particle.style.top = `${centerY}px`;
+        particle.style.animation = 'none';
+        particle.style.fontSize = `${16 + Math.random() * 14}px`;
+        container.appendChild(particle);
+
+        const angle = (i / count) * Math.PI * 2;
+        const distance = 40 + Math.random() * 70;
+        particle.animate(
+            [
+                { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+                {
+                    transform: `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px) scale(0.3)`,
+                    opacity: 0,
+                },
+            ],
+            { duration: 450 + Math.random() * 250, easing: 'ease-out' }
+        );
+        setTimeout(() => particle.remove(), 800);
+    }
+}
+
+function hitBridgeNail() {
+    if (!state || state.screen !== 'break' || state.break_type !== 'movement' || state.break_interaction !== 'bridge_repair') return;
+
+    syncBridgeRepairState();
+    const hammerButton = $('#bridge-hammer-btn');
+
+    if (bridgeRepairState.complete) {
+        playHammerHitSound(0.7);
+        showBridgeHitBurst(hammerButton, true);
+        const scene = $('#bridge-scene');
+        if (scene) {
+            const rect = scene.getBoundingClientRect();
+            spawnStarBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        }
+        return;
+    }
+
+    bridgeRepairState.hits = Math.min(bridgeRepairState.requiredHits, bridgeRepairState.hits + 1);
+    playHammerHitSound(bridgeRepairState.hits / bridgeRepairState.requiredHits);
+    showBridgeHitBurst(hammerButton);
+    updateBridgeRepairUI(true);
+
+    if (bridgeRepairState.hits >= bridgeRepairState.requiredHits) {
+        bridgeRepairState.complete = true;
+        playBridgeFixedSound();
+        showScreenFlash('rgba(255, 215, 0, 0.16)');
+        showCascade();
+        const scene = $('#bridge-scene');
+        if (scene) {
+            const rect = scene.getBoundingClientRect();
+            spawnStarBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        }
+        updateBridgeRepairUI(true);
+    }
+}
+
 function renderBreak() {
     const isMovement = state.break_type === 'movement';
-    const emoji = isMovement ? '🏃' : '🤪';
+    const isBridgeRepair = isMovement && state.break_interaction === 'bridge_repair';
+    const emoji = isBridgeRepair ? '🔨' : (isMovement ? '⚡' : '🎭');
+    const rescueHtml = isBridgeRepair ? bridgeRescueHtml() : '';
 
     content().innerHTML = `
-        <div class="card">
+        ${renderObjectiveBanner(true)}
+        <div class="card ${isBridgeRepair ? 'bridge-break-card' : ''}">
             <div class="break-emoji">${emoji}</div>
             <div class="break-title">${state.title}</div>
             <div class="break-text">${state.text}</div>
+            ${rescueHtml}
         </div>
     `;
 
     controlsBar().innerHTML = `
         <button class="ctrl-btn continue" onclick="doAction('continue')">
-            Done! Continue <span class="ctrl-shortcut">Enter</span>
+            Back To The Mission <span class="ctrl-shortcut">Enter</span>
         </button>
     `;
+
+    if (isBridgeRepair) {
+        updateBridgeRepairUI();
+    }
 }
 
 function renderBossIntro() {
     playBossIntroSound();
     content().innerHTML = `
+        ${renderObjectiveBanner(true)}
         <div class="card boss-border">
             <div class="story-panel">
                 ${imageHtml(state.image, 'Boss Challenge')}
@@ -830,12 +1481,14 @@ function renderBossVictory() {
     showRocketLaunch();
     setTimeout(() => showCascade(), 500);
     content().innerHTML = `
+        ${renderObjectiveBanner(true)}
         <div class="card green-border">
             <div class="story-panel">
                 ${imageHtml(state.image, 'Victory')}
                 <div class="break-emoji">🏆</div>
                 <div class="story-title">${state.title}</div>
                 <div class="story-text">${state.text}</div>
+                ${renderRewardCard(state.reward, 'Level Reward')}
             </div>
         </div>
     `;
@@ -893,10 +1546,13 @@ function renderScoreReport() {
 
     content().innerHTML = `
         <div class="card gold-border">
-            <div class="phase-label">SESSION COMPLETE</div>
+            <div class="phase-label">LEVEL CLEAR</div>
+            <div class="story-title">${state.level_name || 'Mission Complete'}</div>
             <div class="score-number" id="score-counter">0</div>
             <div class="score-label">Adventure Points Earned</div>
             <div class="report-lines">${state.report}</div>
+            ${renderRewardCard(state.reward, 'Relic Unlocked')}
+            ${renderNextLevelCard(state.next_level, state.world_complete)}
             <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
                 ${childStats}
             </div>
@@ -931,8 +1587,10 @@ function renderPowerLevels() {
     }
 
     content().innerHTML = `
-        <div class="phase-label">POWER LEVELS</div>
+        <div class="phase-label">TEAM RANKS</div>
+        ${renderRewardCard(state.reward, 'Mission Reward')}
         ${cards}
+        ${renderCampaignMap(getCampaign(), true)}
     `;
 
     controlsBar().innerHTML = `
@@ -946,8 +1604,11 @@ function renderCliffhanger() {
     content().innerHTML = `
         <div class="card purple-border">
             ${imageHtml(state.image, 'To be continued')}
+            <div class="phase-label">${state.world_complete ? 'WORLD COMPLETE' : 'NEXT ROUTE'}</div>
+            <div class="story-title">${state.title || 'To Be Continued'}</div>
             <div class="cliffhanger-text">${state.text}</div>
-            <div class="cliffhanger-label">To be continued...</div>
+            ${renderNextLevelCard(state.next_level, state.world_complete)}
+            <div class="cliffhanger-label">${state.world_complete ? 'A new world opens...' : 'Continue the adventure...'}</div>
         </div>
     `;
 
@@ -971,6 +1632,7 @@ function renderComplete() {
             <div class="story-text" style="margin-top: 16px;">${state.text}</div>
             <div class="score-number" style="margin-top: 20px;">${state.final_score}</div>
             <div class="score-label">Total Adventure Points This Session</div>
+            ${renderCampaignMap(getCampaign(), true)}
         </div>
     `;
 
@@ -1014,8 +1676,12 @@ document.addEventListener('keydown', (e) => {
     } else if (key === 's') {
         const btn = document.querySelector('.ctrl-btn.skip');
         if (btn) doAction('skip');
-    } else if (key === 'b') {
-        // Break shortcut - trigger continue if on a break screen
+    } else if (key === ' ' || key === 'b') {
+        const hammer = document.getElementById('bridge-hammer-btn');
+        if (hammer && state?.break_interaction === 'bridge_repair') {
+            e.preventDefault();
+            hitBridgeNail();
+        }
     }
 });
 
