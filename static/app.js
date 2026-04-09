@@ -6,6 +6,337 @@ const controlsBar = () => $('#controls-bar');
 
 let state = null;
 let pollTimer = null;
+let demoMode = false;
+let previewStep = -1;
+
+const isStaticHost = window.location.hostname.endsWith('github.io') || window.location.protocol === 'file:';
+const assetBase = isStaticHost ? '.' : '/static';
+
+const PREVIEW_WORLD_NAMES = [
+    'Enchanted Forest',
+    'Crystal Caves',
+    'Hidden Island',
+    'Sky Kingdom',
+    'Puzzle Dimension',
+];
+
+const PREVIEW_LEVEL_NAMES = [
+    ['Whispering Grove', 'Lantern Run', 'Wishing Tree Workshop', 'Bridge of Echoes', 'Goblin Gate'],
+    ['Glow Tunnel', 'Crystal Tracks', 'Shard Foundry', 'Echo Vault', 'Dragon Lift'],
+    ['Driftwood Beach', 'Parrot Post', 'Shell Maze', 'Tide Workshop', 'Guardian Reef'],
+    ['Cloud Steps', 'Windmill Row', 'Storm Station', 'Rainbow Span', 'Shepherd Peak'],
+    ['Mirror Hall', 'Thread Gate', 'Puzzle Loom', 'Final Route', 'Star Forge'],
+];
+
+function assetPath(path) {
+    if (!path) return '';
+    if (path.startsWith('/static/')) {
+        return `${assetBase}/${path.slice('/static/'.length)}`;
+    }
+    return path;
+}
+
+function previewCampaign() {
+    const worldNumber = 1;
+    const levelNumber = 3;
+    const levelId = `w${worldNumber}l${levelNumber}`;
+    const completed = new Set(['w1l1', 'w1l2']);
+    const mapNodes = [];
+    const worlds = PREVIEW_WORLD_NAMES.map((name, worldIndex) => {
+        const worldNo = worldIndex + 1;
+        PREVIEW_LEVEL_NAMES[worldIndex].forEach((levelName, levelIndex) => {
+            const nodeId = `w${worldNo}l${levelIndex + 1}`;
+            mapNodes.push({
+                id: nodeId,
+                world_number: worldNo,
+                world_name: name,
+                level_number: levelIndex + 1,
+                level_name: levelName,
+                completed: completed.has(nodeId),
+                current: nodeId === levelId,
+                unlocked: worldNo < worldNumber || nodeId === levelId || completed.has(nodeId),
+            });
+        });
+
+        return {
+            world_number: worldNo,
+            name,
+            theme: ['Forest repairs', 'Crystal routes', 'Island rescue', 'Sky bridges', 'Final weave'][worldIndex],
+            unlocked: worldNo <= worldNumber,
+            completed: worldNo < worldNumber,
+            levels_completed: worldNo === 1 ? 2 : 0,
+        };
+    });
+
+    return {
+        world_number: worldNumber,
+        world_name: PREVIEW_WORLD_NAMES[worldNumber - 1],
+        level_number: levelNumber,
+        level_name: 'Wishing Tree Workshop',
+        level_id: levelId,
+        objective: 'Repair the Wishing Tree before the forest loses its last safe shelter.',
+        objective_label: `World ${worldNumber} · Level ${levelNumber}`,
+        characters_in_scene: [
+            { name: 'Captain Starlight', role: 'Mission guide' },
+            { name: 'Wise Owl', role: 'Forest mentor' },
+            { name: 'Puzzle Goblin', role: 'Troublemaker' },
+        ],
+        reward: {
+            icon: '🌟',
+            name: 'Lantern Seed',
+            summary: 'A glowing seed that keeps safe paths lit through the forest.',
+        },
+        current_reward: {
+            icon: '🪵',
+            name: 'Bridge Nails',
+            summary: 'Fresh repair tools for broken routes.',
+        },
+        reward_history: ['Whisper Leaves', 'Moon Lantern'],
+        world_complete: false,
+        next_level: {
+            world_number: 1,
+            world_name: 'Enchanted Forest',
+            level_number: 4,
+            level_name: 'Bridge of Echoes',
+            objective: 'Cross the repaired bridge and follow the echo trail to the goblin gate.',
+        },
+        map_nodes: mapNodes,
+        worlds,
+        progress_copy: '2 of 25 levels cleared',
+    };
+}
+
+function previewChildren() {
+    return {
+        Jesse: {
+            age: 4,
+            character_name: 'Jesse the Sound Seeker',
+            sessions_completed: 2,
+            power_level: 3,
+            power_level_name: 'Spark Scout',
+        },
+        Reuben: {
+            age: 7,
+            character_name: 'Reuben the Code Breaker',
+            sessions_completed: 2,
+            power_level: 4,
+            power_level_name: 'Route Builder',
+        },
+    };
+}
+
+function previewTopics() {
+    return {
+        Jesse: {
+            sounds: { subject: 'Phonics', mastery_pct: 62, items_count: 12 },
+        },
+        Reuben: {
+            reading: { subject: 'Reading', mastery_pct: 74, items_count: 18 },
+            geography: { subject: 'Geography', mastery_pct: 48, items_count: 10 },
+        },
+    };
+}
+
+function previewTeam() {
+    return {
+        total_adventure_points: 64,
+        achievements: ['First World Steps', 'Bridge Builder'],
+        current_reward: {
+            icon: '🪵',
+            name: 'Bridge Nails',
+            summary: 'Fresh repair tools for broken routes.',
+        },
+    };
+}
+
+function buildPreviewState() {
+    if (previewStep < 0) {
+        return { phase: 'no_session', screen: 'no_session', preview_mode: true };
+    }
+
+    const campaign = previewCampaign();
+    const shared = {
+        preview_mode: true,
+        session_number: 3,
+        phase: 'pre_session',
+        screen: 'pre_session',
+        title: 'Campaign Map',
+        text: '',
+        date: 'Static Preview',
+        image: '/static/images/title_hero.png',
+        arc_name: campaign.world_name,
+        world_number: campaign.world_number,
+        level_number: campaign.level_number,
+        level_name: campaign.level_name,
+        active_objective: campaign.objective,
+        campaign,
+        children: previewChildren(),
+        topics: previewTopics(),
+        team: previewTeam(),
+        team_score: 18,
+        elapsed_minutes: 4,
+        multiple_choice_mode: false,
+    };
+
+    const screens = [
+        {
+            ...shared,
+            phase: 'pre_session',
+            screen: 'pre_session',
+        },
+        {
+            ...shared,
+            phase: 'act1_recap',
+            screen: 'story',
+            title: 'Campaign Recap',
+            text: 'Previously on Star Explorers... you cleared Lantern Run, restored the moon lanterns, and tracked Puzzle Goblin to the Wishing Tree workshop.',
+            style: 'story',
+        },
+        {
+            ...shared,
+            phase: 'act1_story_hook',
+            screen: 'story',
+            title: `Level ${campaign.level_number}: ${campaign.level_name}`,
+            text: 'The Wishing Tree is cracking and the forest shelter is fading. Wise Owl points to missing repair parts while Puzzle Goblin slips into the branches above.',
+            style: 'adventure',
+        },
+        {
+            ...shared,
+            phase: 'act2_round1',
+            screen: 'question',
+            label: 'OBJECTIVE PHASE 1',
+            current_child: 'Reuben',
+            remaining: 3,
+            question: {
+                id: 'preview_reading_1',
+                read_aloud: 'What is another word for repair?',
+                correct_answers: ['fix', 'mend', 'restore'],
+                correct_response: 'Yes. Repair means to fix something that is broken.',
+                incorrect_response: 'Not quite. Think about making a broken thing work again.',
+                hint: 'You do this to a broken bridge or toy.',
+            },
+        },
+        {
+            ...shared,
+            phase: 'movement_break',
+            screen: 'break',
+            break_type: 'movement',
+            break_interaction: 'bridge_repair',
+            title: 'POWER-UP TIME!',
+            text: 'The workshop bridge snapped. Smash the repair nails into place so the team can reach the Wishing Tree roots.',
+        },
+        {
+            ...shared,
+            phase: 'act3_boss_intro',
+            screen: 'boss_intro',
+            title: `LEVEL BOSS · ${campaign.level_name}`,
+            text: 'Puzzle Goblin blocks the final gear lock. Solve one last challenge to release the repair platform.',
+            image: '/static/images/title_hero.png',
+        },
+        {
+            ...shared,
+            phase: 'act3_boss',
+            screen: 'boss_victory',
+            title: 'BOSS DEFEATED!',
+            text: 'The repair platform snaps into place, the Wishing Tree glows again, and the forest shelter holds.',
+            reward: campaign.reward,
+            image: '/static/images/title_hero.png',
+        },
+        {
+            ...shared,
+            phase: 'act5_score',
+            screen: 'score_report',
+            report: 'LEVEL CLEAR: Wishing Tree Workshop\nObjective complete: Repair the Wishing Tree before the forest loses its last safe shelter.\nReward earned: Lantern Seed — A glowing seed that keeps safe paths lit through the forest.',
+            reward: campaign.reward,
+            next_level: campaign.next_level,
+            world_complete: false,
+            stats: {
+                children: {
+                    Jesse: { asked: 2, correct: 2, new_learned: 1 },
+                    Reuben: { asked: 3, correct: 2, new_learned: 1 },
+                },
+            },
+        },
+        {
+            ...shared,
+            phase: 'act5_power_levels',
+            screen: 'power_levels',
+            reward: campaign.reward,
+            next_level: campaign.next_level,
+            world_complete: false,
+            levels: {
+                Jesse: { power_level: 3, power_level_name: 'Spark Scout', total_correct: 18 },
+                Reuben: { power_level: 4, power_level_name: 'Route Builder', total_correct: 24 },
+            },
+        },
+        {
+            ...shared,
+            phase: 'act5_cliffhanger',
+            screen: 'cliffhanger',
+            title: 'NEXT LEVEL UNLOCKED · Bridge of Echoes',
+            text: 'The repaired roots uncover a hidden path. Beyond the bridge, Puzzle Goblin has left echo markers leading straight to the gate.',
+            next_level: campaign.next_level,
+            world_complete: false,
+            image: '/static/images/title_hero.png',
+        },
+        {
+            ...shared,
+            phase: 'complete',
+            screen: 'complete',
+            title: 'LEVEL COMPLETE',
+            text: 'This is the static GitHub Pages preview. The real game session flow runs against the Flask backend.',
+            final_score: 18,
+            image: '/static/images/title_hero.png',
+        },
+    ];
+
+    return screens[Math.min(previewStep, screens.length - 1)];
+}
+
+function previewResult(action) {
+    if (action === 'correct') {
+        return { ok: true, correct: true, points: 5, streak: 3 };
+    }
+    if (action === 'wrong') {
+        return { ok: true, correct: false, points: 0, streak: 0 };
+    }
+    return { ok: true };
+}
+
+async function previewApiGet(url) {
+    if (url === '/api/state') {
+        return buildPreviewState();
+    }
+    return {};
+}
+
+async function previewApiPost(url, body = {}) {
+    if (url === '/api/session/start') {
+        previewStep = 0;
+        return { ok: true, session_number: 3 };
+    }
+    if (url === '/api/session/end') {
+        previewStep = -1;
+        return { ok: true, session_number: 3 };
+    }
+    if (url === '/api/action') {
+        if (previewStep >= 0) {
+            previewStep = Math.min(previewStep + 1, 10);
+        }
+        return previewResult(body.action);
+    }
+    if (url === '/api/generate-choices') {
+        return {
+            options: [
+                { id: 'a', text: 'Fix' },
+                { id: 'b', text: 'Hide' },
+                { id: 'c', text: 'Scatter' },
+                { id: 'd', text: 'Forget' },
+            ],
+        };
+    }
+    return {};
+}
 
 // --- Audio (Web Audio API synthesized sounds) ---
 
@@ -557,7 +888,7 @@ function transitionTo(renderFn, transitionClass = 'fade-in') {
 
 function imageHtml(src, alt) {
     if (!src) return '';
-    return `<img src="${src}" alt="${alt || ''}" class="scene-image" onerror="this.style.display='none'" />`;
+    return `<img src="${assetPath(src)}" alt="${alt || ''}" class="scene-image" onerror="this.style.display='none'" />`;
 }
 
 // --- Text-to-Speech (Web Speech API) ---
@@ -691,17 +1022,45 @@ function speakCurrentQuestion() {
 // --- API Calls ---
 
 async function apiGet(url) {
-    const res = await fetch(url);
-    return res.json();
+    if (demoMode) {
+        return previewApiGet(url);
+    }
+    try {
+        const res = await fetch(url);
+        if (!res.ok) {
+            throw new Error(`GET ${url} failed with ${res.status}`);
+        }
+        return res.json();
+    } catch (error) {
+        if (isStaticHost) {
+            demoMode = true;
+            return previewApiGet(url);
+        }
+        throw error;
+    }
 }
 
 async function apiPost(url, body = {}) {
-    const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-    });
-    return res.json();
+    if (demoMode) {
+        return previewApiPost(url, body);
+    }
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+            throw new Error(`POST ${url} failed with ${res.status}`);
+        }
+        return res.json();
+    } catch (error) {
+        if (isStaticHost) {
+            demoMode = true;
+            return previewApiPost(url, body);
+        }
+        throw error;
+    }
 }
 
 async function fetchState() {
@@ -742,6 +1101,10 @@ async function doAction(action) {
 async function startSession() {
     playLaunchSound();
     await apiPost('/api/session/start');
+    if (demoMode) {
+        await fetchState();
+        return;
+    }
     await doAction('continue');
 }
 
@@ -937,12 +1300,13 @@ function renderNoSession() {
         <div class="no-session">
             ${imageHtml('/static/images/title_hero.png', 'Star Explorers')}
             <div class="title">STAR EXPLORERS</div>
-            <div class="subtitle">Mission Control Ready</div>
+            <div class="subtitle">${demoMode ? 'Static Preview Mode' : 'Mission Control Ready'}</div>
+            ${demoMode ? '<div class="story-text" style="max-width: 620px; margin: 18px auto 0;">GitHub Pages is running a frontend-only preview. Launch to view the campaign flow without the Flask backend.</div>' : ''}
         </div>
     `;
     controlsBar().innerHTML = `
         <button class="ctrl-btn launch" onclick="startSession()">
-            🚀 Launch Mission
+            ${demoMode ? '🎮 Open Preview' : '🚀 Launch Mission'}
         </button>
     `;
 }
@@ -1010,6 +1374,10 @@ function renderPreSession() {
 
 // Multiple-choice rendering
 async function fetchMultipleChoiceOptions(questionId) {
+    if (demoMode) {
+        const data = await previewApiPost('/api/generate-choices', { question_id: questionId });
+        return data.options || [];
+    }
     try {
         const response = await fetch('/api/generate-choices', {
             method: 'POST',

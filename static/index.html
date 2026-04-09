@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/style.css">
+    <link id="app-stylesheet" rel="stylesheet">
 </head>
 <body>
     <div id="starfield"></div>
@@ -32,6 +32,14 @@
 
     <div id="achievement-overlay" class="hidden"></div>
 
-    <script src="/static/app.js"></script>
+    <script>
+        const isPagesHost = window.location.hostname.endsWith('github.io');
+        const assetBase = isPagesHost ? '.' : '/static';
+        document.getElementById('app-stylesheet').href = `${assetBase}/style.css`;
+
+        const appScript = document.createElement('script');
+        appScript.src = `${assetBase}/app.js`;
+        document.body.appendChild(appScript);
+    </script>
 </body>
 </html>
