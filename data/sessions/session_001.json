@@ -1,21 +1,24 @@
 {
   "session_number": 1,
-  "date": "2026-03-29T14:06:22.279034",
+  "date": "2026-04-08T13:45:00.173752",
   "duration_minutes": 0,
   "children": {
     "Jesse": {
-      "asked": 0,
-      "correct": 0,
+      "asked": 3,
+      "correct": 3,
       "new": 0
     },
     "Reuben": {
-      "asked": 0,
-      "correct": 0,
+      "asked": 3,
+      "correct": 3,
       "new": 0
     }
   },
-  "team_score": 0,
-  "achievements_earned": [],
+  "team_score": 30,
+  "achievements_earned": [
+    "Hat Trick (Jesse)",
+    "Hat Trick (Reuben)"
+  ],
   "notes": [],
   "callbacks_created": []
 }

@@ -14,12 +14,12 @@ cd star-explorers
 # Create a virtual environment and install dependencies
 python3 -m venv venv
 source venv/bin/activate
-pip install flask rich
+pip install flask
 
 # First-time setup (creates child profiles and team data)
-python main.py setup
+python app.py
 
-# Launch the web GUI
+# Launch web GUI
 python app.py
 ```
 
@@ -63,13 +63,11 @@ They see animated space-themed screens with:
 ```
 star-explorers/
 ├── app.py              # Flask web server + state machine
-├── main.py             # CLI entry point
 ├── models.py           # Data models (ChildProfile, TeamState, etc.)
-├── session.py          # CLI session engine (Five-Act flow)
+├── session.py          # Core game logic (pure functions, no UI)
 ├── spaced_rep.py       # Spaced repetition engine (Modified Leitner + SM-2)
 ├── questions.py        # Question bank loader and filters
 ├── story.py            # Story arcs, breaks, cliffhangers
-├── display.py          # Rich CLI display (used by main.py)
 ├── static/
 │   ├── index.html      # Web GUI page shell
 │   ├── style.css       # Space theme + CSS animations
@@ -78,18 +76,7 @@ star-explorers/
     ├── children/       # Child profile JSON files
     ├── question_bank/  # Question bank JSON files
     ├── sessions/       # Session log JSON files
-    └── team.json       # Team state
-```
-
-## CLI Mode (alternative)
-
-You can also run it as a terminal app (requires the `rich` package):
-
-```bash
-python main.py play     # Start a session
-python main.py stats    # View progress dashboard
-python main.py setup    # First-time setup
-python main.py reset    # Reset all progress
+└── team.json       # Team state
 ```
 
 ## Customization
@@ -118,4 +105,4 @@ Add JSON files to `data/question_bank/`. Each file is an array of question objec
 
 ### Child Profiles
 
-Edit `data/children/jesse.json` or `data/children/reuben.json` to change names, ages, or character titles. Or run `python main.py setup` to regenerate defaults.
+Edit `data/children/jesse.json` or `data/children/reuben.json` to change names, ages, or character titles.

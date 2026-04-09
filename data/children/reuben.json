@@ -3,11 +3,17 @@
   "age": 7,
   "character_name": "Reuben the Code Breaker",
   "character_title": "Code Breaker",
-  "sessions_completed": 0,
-  "total_correct": 0,
+  "sessions_completed": 3,
+  "total_correct": 3,
   "power_level": 1,
   "topics": {},
-  "interests": ["woodworking", "violin", "science", "space", "parkrun"],
+  "interests": [
+    "woodworking",
+    "violin",
+    "science",
+    "space",
+    "parkrun"
+  ],
   "favourite_formats": [],
   "frustration_triggers": []
 }

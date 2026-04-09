@@ -1,16 +1,72 @@
 {
   "team_name": "Star Explorers",
-  "total_adventure_points": 0,
-  "sessions_completed": 0,
-  "achievements": [],
+  "total_adventure_points": 30,
+  "sessions_completed": 3,
+  "achievements": [
+    "Hat Trick (Jesse)",
+    "Hat Trick (Reuben)"
+  ],
   "current_arc": 1,
-  "current_chapter": 0,
-  "arc_name": "",
-  "characters_met": [],
-  "items_collected": [],
-  "cliffhanger": "",
+  "current_chapter": 3,
+  "arc_name": "The Enchanted Forest",
+  "current_world": 1,
+  "current_level": 4,
+  "characters_met": [
+    "Captain Starlight",
+    "Wise Owl",
+    "Puzzle Goblin"
+  ],
+  "items_collected": [
+    "Forest Lantern Compass",
+    "Whisper Leaf Map",
+    "Wishwood Cog"
+  ],
+  "completed_levels": [
+    "w1l1",
+    "w1l2",
+    "w1l3"
+  ],
+  "collected_relics": [
+    "Forest Lantern Compass",
+    "Whisper Leaf Map",
+    "Wishwood Cog"
+  ],
+  "story_flags": {
+    "forest_cleared": false,
+    "caves_cleared": false,
+    "island_cleared": false,
+    "sky_cleared": false,
+    "puzzle_goblin_warning_known": false,
+    "puzzle_goblin_allied": false,
+    "finale_unlocked": false
+  },
+  "active_objective": "Repair the Wishing Tree before the forest loses its last safe shelter.",
+  "current_reward": {
+    "world_number": 1,
+    "world_name": "The Enchanted Forest",
+    "level_number": 3,
+    "level_name": "Wishing Tree Workshop",
+    "name": "Wishwood Cog",
+    "summary": "A carved wooden cog that can unlock root-powered machines.",
+    "icon": "\u2699\ufe0f"
+  },
+  "character_status": {
+    "Captain Starlight": "Guiding the team toward the next repair mission.",
+    "Puzzle Goblin": "Causing trouble and hiding the real danger.",
+    "Wise Owl": "Teaching the team how repaired magic changes the world."
+  },
+  "world_unlocks": [
+    "The Enchanted Forest",
+    "The Crystal Caves"
+  ],
+  "cliffhanger": "When the Wishing Tree steadies, its roots pull back and uncover a tiny door with a star-shaped slot.",
   "callbacks": [],
-  "secret_mission": {},
+  "secret_mission": {
+    "description": "Side Quest: teach someone one clue or fact you learned on this level.",
+    "assigned_session": 2
+  },
   "lightning_round_record": 0,
-  "rhyme_chain_record": 0
+  "rhyme_chain_record": 0,
+  "multiple_choice_mode": false,
+  "tts_enabled": false
 }

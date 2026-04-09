@@ -1,0 +1,21 @@
+{
+  "session_number": 2,
+  "date": "2026-04-08T13:48:07.732218",
+  "duration_minutes": 0,
+  "children": {
+    "Jesse": {
+      "asked": 0,
+      "correct": 0,
+      "new": 0
+    },
+    "Reuben": {
+      "asked": 0,
+      "correct": 0,
+      "new": 0
+    }
+  },
+  "team_score": 0,
+  "achievements_earned": [],
+  "notes": [],
+  "callbacks_created": []
+}
