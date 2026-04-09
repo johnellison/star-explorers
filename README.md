@@ -14,7 +14,7 @@ cd star-explorers
 # Create a virtual environment and install dependencies
 python3 -m venv venv
 source venv/bin/activate
-pip install flask
+pip install -r requirements.txt
 
 # First-time setup (creates child profiles and team data)
 python app.py
@@ -24,6 +24,26 @@ python app.py
 ```
 
 Then open [http://localhost:5000](http://localhost:5000) in your browser.
+
+## Railway Deploy
+
+Railway is the right host for the current app because it writes persistent game state to JSON files.
+
+Deploy setup:
+
+```bash
+# Railway will use the Procfile start command
+web: gunicorn app:app --bind 0.0.0.0:$PORT
+```
+
+Recommended Railway configuration:
+
+1. Deploy the repo as a Python service.
+2. Add a persistent volume and mount it at `/app/data`.
+3. Set `STAR_EXPLORERS_DATA_DIR=/app/data`.
+4. Keep the default start command from `Procfile`.
+
+The app will seed `children/`, `question_bank/`, `sessions/`, and `team.json` into the mounted data directory on first boot.
 
 ## How It Works
 

@@ -5,17 +5,38 @@ from datetime import datetime
 from typing import Optional
 import json
 import os
+import shutil
 
 _SOURCE_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
-# On Vercel, filesystem is read-only — copy data to /tmp on cold start
-if os.environ.get("VERCEL"):
-    import shutil
-    DATA_DIR = "/tmp/star-explorers-data"
-    if not os.path.exists(DATA_DIR):
-        shutil.copytree(_SOURCE_DATA_DIR, DATA_DIR)
-else:
-    DATA_DIR = _SOURCE_DATA_DIR
+def _prepare_data_dir() -> str:
+    """Resolve and initialize the writable data directory for the app."""
+    configured_dir = os.environ.get("STAR_EXPLORERS_DATA_DIR")
+    if configured_dir:
+        data_dir = os.path.abspath(configured_dir)
+    elif os.environ.get("VERCEL"):
+        # Vercel functions have a read-only filesystem, so use scratch space.
+        data_dir = "/tmp/star-explorers-data"
+    else:
+        data_dir = _SOURCE_DATA_DIR
+
+    os.makedirs(data_dir, exist_ok=True)
+
+    for subdir in ["children", "question_bank", "sessions"]:
+        src = os.path.join(_SOURCE_DATA_DIR, subdir)
+        dest = os.path.join(data_dir, subdir)
+        if not os.path.exists(dest):
+            shutil.copytree(src, dest)
+
+    team_src = os.path.join(_SOURCE_DATA_DIR, "team.json")
+    team_dest = os.path.join(data_dir, "team.json")
+    if not os.path.exists(team_dest) and os.path.exists(team_src):
+        shutil.copy2(team_src, team_dest)
+
+    return data_dir
+
+
+DATA_DIR = _prepare_data_dir()
 
 
 @dataclass
